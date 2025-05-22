@@ -1,4 +1,4 @@
-import { BadRequestException, Controller } from '@nestjs/common';
+import { BadRequestException, Controller, ParseIntPipe } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { PropietariosService } from './propietarios.service';
 import { CreatePropietarioDto } from './dto/create-propietario.dto';
@@ -23,15 +23,15 @@ export class PropietariosController {
   }
 
 
-  //   @MessagePattern('findAll_Propietarios')
-  //   findAll() {
-  //     return this.propietariosService.findAll();
-  //   }
+    @MessagePattern('findAll_propietarios')
+    findAll() {
+      return this.propietariosService.findAll();
+    }
 
-  //   @MessagePattern('findOnePropietario')
-  //   findOne(@Payload() id: number) {
-  //     return this.propietariosService.findOne(id);
-  //   }
+    @MessagePattern('findPropietarioById')
+    async findOne(@Payload('prop_id', ParseIntPipe) prop_id: number) {
+      return this.propietariosService.findOne(prop_id);
+    }
 
   //   @MessagePattern('updatePropietario')
   //   update(@Payload() updatePropietarioDto: UpdatePropietarioDto) {

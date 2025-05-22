@@ -4,7 +4,7 @@ import { UpdatePropietarioDto } from './dto/update-propietario.dto';
 import { PrismaClient } from '@prisma/client';
 import { NATS_SERVICE } from 'src/config';
 import { privateDecrypt } from 'crypto';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class PropietariosService extends PrismaClient implements OnModuleInit {
@@ -56,11 +56,22 @@ export class PropietariosService extends PrismaClient implements OnModuleInit {
   //fin crear paciente
 
   findAll() {
-    return `This action returns all propietarios`;
+    return this.propietario.findMany({})
+    
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} propietario`;
+  async findOne(prop_id: number) {
+    const propietario = await this.propietario.findFirst({
+      where: {
+        prop_id
+      }
+    });
+    if (!propietario) {
+      throw new RpcException({
+        message: `[gesveterinaria-ms]Propietario  con el # ${prop_id} no encontrado`
+      })
+    }
+    return propietario;
   }
 
   update(id: number, updatePropietarioDto: UpdatePropietarioDto) {
