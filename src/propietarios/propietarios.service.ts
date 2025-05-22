@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger, OnModuleInit, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, HttpStatus, Inject, Injectable, Logger, OnModuleInit, UnauthorizedException } from '@nestjs/common';
 import { CreatePropietarioDto } from './dto/create-propietario.dto';
 import { UpdatePropietarioDto } from './dto/update-propietario.dto';
 import { PrismaClient } from '@prisma/client';
@@ -23,7 +23,7 @@ export class PropietariosService extends PrismaClient implements OnModuleInit {
 
   //inicio crear paciente
   async create(createPropietarioDto: CreatePropietarioDto, user: { id: number }) {
-     const { empresa_id } = createPropietarioDto;
+    const { empresa_id } = createPropietarioDto;
     const validacion = await this.client.send('empresas.validar-empresa-admin', {
       empresa_id: createPropietarioDto.empresa_id,
       admin_id: user.id, // <- este es el admin autenticado
@@ -57,7 +57,7 @@ export class PropietariosService extends PrismaClient implements OnModuleInit {
 
   findAll() {
     return this.propietario.findMany({})
-    
+
   }
 
   async findOne(prop_id: number) {
@@ -74,8 +74,37 @@ export class PropietariosService extends PrismaClient implements OnModuleInit {
     return propietario;
   }
 
-  update(id: number, updatePropietarioDto: UpdatePropietarioDto) {
-    return `This action updates a #${id} propietario`;
+  async update(prop_id: number, updatePropietarioDto: UpdatePropietarioDto, updatedBy: number) {
+    try {
+      if (!prop_id) {
+        console.error('❌ Error: PROP_ID es undefined. No se puede actualizar.');
+        throw new BadRequestException('🚫 No se encontró el ID del propietario para actualizar.');
+      }
+
+      const existingPropietario = await this.propietario.findUnique({ where: { prop_id } });
+      if (!existingPropietario) {
+        throw new BadRequestException(`🚫 No se encontró ninguna empresa con ID: ${prop_id}`);
+      }
+
+      console.log('📝 updatePropietarioDto recibido:', updatePropietarioDto);
+
+      const propietarioUpdated = await this.propietario.update({
+        where: { prop_id },
+        data: {
+          ...updatePropietarioDto,
+          updatedBy,
+        }
+      });
+
+      console.log(`✅ propietario actualizado correctamente: ${updatePropietarioDto.prop_nombre}`);
+      return propietarioUpdated;
+    } catch (error) {
+      console.error('❌ Error al actualizar propietario:', error);
+      throw new RpcException({
+        message: 'Error al actualizar la propietario',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
+    }
   }
 
   remove(id: number) {

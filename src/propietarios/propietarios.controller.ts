@@ -33,10 +33,13 @@ export class PropietariosController {
       return this.propietariosService.findOne(prop_id);
     }
 
-  //   @MessagePattern('updatePropietario')
-  //   update(@Payload() updatePropietarioDto: UpdatePropietarioDto) {
-  //     return this.propietariosService.update(updatePropietarioDto.id, updatePropietarioDto);
-  //   }
+
+    @MessagePattern('updatePropietario')
+    async update(@Payload() payload:any) {
+      const {prop_id,updatedBy, updatePropietarioDto} = payload
+      console.log(`EL PROPIETARIO ${payload}`)
+      return this.propietariosService.update(prop_id, updatePropietarioDto, updatedBy);
+    }
 
   //   @MessagePattern('removePropietario')
   //   remove(@Payload() id: number) {
