@@ -41,8 +41,10 @@ export class PropietariosController {
       return this.propietariosService.update(prop_id, updatePropietarioDto, updatedBy);
     }
 
-  //   @MessagePattern('removePropietario')
-  //   remove(@Payload() id: number) {
-  //     return this.propietariosService.remove(id);
-  //   }
+    @MessagePattern('removePropietario')
+    remove(@Payload() payload: any) {
+      const { prop_id, updatedBy} = payload
+      console.log(`El propietario ${payload} a sido eliminado`)
+      return this.propietariosService.remove(prop_id,updatedBy);
+    }
 }

@@ -107,7 +107,15 @@ export class PropietariosService extends PrismaClient implements OnModuleInit {
     }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} propietario`;
+  async remove(prop_id: number, updatedBy:number) {
+    await this.findOne(prop_id);
+    const propietariodeleted = await this.propietario.update({
+      where: {prop_id},
+      data: {
+        activo:false,
+        updatedBy,
+      }
+    });
+    return propietariodeleted;
   }
 }
