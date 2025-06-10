@@ -13,19 +13,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Propietario {
-  prop_id             Int      @id @default(autoincrement())
-  prop_identificacion String   @unique @db.VarChar(255)
-  prop_nombre         String   @db.VarChar(255)
-  prop_apellido       String   @db.VarChar(255)
-  prop_email          String   @unique @db.VarChar(255)
-  prop_celular        String   @db.VarChar(13)
-  prop_direccion      String   @db.VarChar(255)
-  prop_observaciones  String   @db.VarChar(255)
-  empresa_id          Int // ← para multitenencia
-  activo              Boolean  @default(true)
-  createdBy           Int?
-  updatedBy           Int?
-  created_at          DateTime @default(now())
-  updated_at          DateTime @updatedAt
+model Cliente {
+  cli_id             Int      @id @default(autoincrement())
+  cli_identificacion String   @unique @db.VarChar(255)
+  cli_nombre         String   @db.VarChar(255)
+  cli_apellido       String   @db.VarChar(255)
+  cli_email          String   @unique @db.VarChar(255)
+  cli_celular        String   @db.VarChar(13)
+  cli_direccion      String   @db.VarChar(255)
+  cli_observaciones  String   @db.VarChar(255)
+  empresa_id         Int // ← para multitenencia
+  activo             Boolean  @default(true)
+  createdBy          Int?
+  updatedBy          Int?
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
 }
