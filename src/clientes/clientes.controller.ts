@@ -37,14 +37,21 @@ export class ClientesController {
   //   return this.clientesService.findOne(cli_id);
   // }
   //fin obtener clientes por id
-
-  @MessagePattern('updateCliente')
-  async update(@Payload() payload: any) {
-    const { cli_id, updatedBy, updateClienteDto } = payload
+  //************************************************************************************** */
+//INICIO ACTUALIZAR CLIENTE
+  @MessagePattern({ cmd: 'cliente_update' })
+  async update(
+    @Payload() payload: {
+      cli_id:number;
+      updateClienteDto: UpdateClienteDto;
+      updatedBy: number;
+      user: { id: number };}) {
+    const { cli_id, updateClienteDto, updatedBy, user  } = payload
     console.log(`EL CLIENTE ${payload}`)
-    return this.clientesService.update(cli_id, updateClienteDto, updatedBy);
+    return this.clientesService.update(cli_id, updateClienteDto, updatedBy, user.id);
   }
-
+  //FIN ACTUALIZAR CLIENTE
+//************************************************************************************** */
   @MessagePattern('removePropietario')
   remove(@Payload() payload: any) {
     const { cli_id, updatedBy } = payload

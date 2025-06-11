@@ -107,7 +107,8 @@ export class ClientesService extends PrismaClient implements OnModuleInit {
   }
   //fin encontrar cliente por id
   //************************************************************************************** */
-  async update(cli_id: number, updateClienteDto: UpdateClienteDto, updatedBy: number) {
+  //inicio actuializar cliente por id
+  async update(cli_id: number, updateClienteDto: UpdateClienteDto, updatedBy: number, admin_id: number) {
     try {
       if (!cli_id) {
         console.error('❌ Error: CLI_ID es undefined. No se puede actualizar.');
@@ -116,10 +117,21 @@ export class ClientesService extends PrismaClient implements OnModuleInit {
 
       const existingCliente = await this.cliente.findUnique({ where: { cli_id } });
       if (!existingCliente) {
-        throw new BadRequestException(`🚫 No se encontró ninguna empresa con ID: ${cli_id}`);
+        throw new BadRequestException(`🚫 No se encontró ningun cliente con ID: ${cli_id}`);
       }
 
       console.log('📝 updateClienteDto recibido:', updateClienteDto);
+
+      const { valido } = await this.client
+        .send('empresas.validar-empresa-admin', {
+          empresa_id: existingCliente.empresa_id,
+          admin_id,
+        })
+        .toPromise();
+
+      if (!valido) {
+        throw new ForbiddenException('No autorizado para modificar este cliente');
+      }
 
       const clienteUpdated = await this.cliente.update({
         where: { cli_id },
@@ -139,6 +151,8 @@ export class ClientesService extends PrismaClient implements OnModuleInit {
       });
     }
   }
+  //inicio actuializar cliente por id
+  //************************************************************************************************************ */
 
   async remove(cli_id: number, updatedBy: number) {
     await this.findOne(cli_id);
