@@ -22,20 +22,21 @@ export class ClientesController {
     }, user);
   }
 
-//inicia obtener clientes
+  //inicia obtener clientes
   @MessagePattern({ cmd: 'findAll_clientes' })
-  findAll(@Payload() payload:{adminId: number}) {
-    const {  adminId } = payload;
+  findAll(@Payload() payload: { adminId: number }) {
+    const { adminId } = payload;
     return this.clientesService.findAll(adminId);
   }
   //fin obtener clientes
   //************************************************************************************** */
-
-  @MessagePattern('findPropietarioById')
-  async findOne(@Payload('prop_id', ParseIntPipe) cli_id: number) {
-    return this.clientesService.findOne(cli_id);
-  }
-
+  //inicia obtener clientes por id
+  // @MessagePattern('findClienteById')
+  // async findOne(@Payload('prop_id', ParseIntPipe) payload: { cli_id: number, adminId: number }) {
+  //   const { adminId } = payload
+  //   return this.clientesService.findOne(cli_id);
+  // }
+  //fin obtener clientes por id
 
   @MessagePattern('updateCliente')
   async update(@Payload() payload: any) {
@@ -50,4 +51,21 @@ export class ClientesController {
     console.log(`El propietario ${payload} a sido eliminado`)
     return this.clientesService.remove(cli_id, updatedBy);
   }
+
+
+  //**************************************************************************************** */
+  // src/clientes/clientes.controller.ts (en gesveterinaria-ms)
+  @MessagePattern({ cmd: 'clientes_por_empresa' })
+  async listarClientesPorEmpresa(
+    @Payload() payload: { empresa_id: number; user: { id: number } }
+  ) {
+    const { empresa_id, user } = payload;
+
+    if (!user?.id) {
+      throw new BadRequestException('El campo user.id es obligatorio');
+    }
+
+    return this.clientesService.listarPorEmpresa(empresa_id, user.id);
+  }
+
 }

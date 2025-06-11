@@ -91,21 +91,22 @@ export class ClientesService extends PrismaClient implements OnModuleInit {
   }
   //fin obtener clientes
   //************************************************************************************** */
-
+  //inicia encontrar cliente por id
   async findOne(cli_id: number) {
-    const propietario = await this.cliente.findFirst({
+    const cliente = await this.cliente.findFirst({
       where: {
         cli_id
       }
     });
-    if (!propietario) {
+    if (!cliente) {
       throw new RpcException({
         message: `[gesveterinaria-ms]Propietario  con el # ${cli_id} no encontrado`
       })
     }
-    return propietario;
+    return cliente;
   }
-
+  //fin encontrar cliente por id
+  //************************************************************************************** */
   async update(cli_id: number, updateClienteDto: UpdateClienteDto, updatedBy: number) {
     try {
       if (!cli_id) {
@@ -150,4 +151,26 @@ export class ClientesService extends PrismaClient implements OnModuleInit {
     });
     return propietariodeleted;
   }
+  //*************************************************************************************************************** */
+  async listarPorEmpresa(empresa_id: number, admin_id: number) {
+    // Validar que el admin está relacionado con la empresa
+    const { valido, motivo } = await this.client
+      .send('empresas.validar-empresa-admin', {
+        empresa_id,
+        admin_id,
+      })
+      .toPromise();
+
+    if (!valido) {
+      this.logger.warn(`Acceso denegado: ${motivo}`);
+      throw new ForbiddenException('Empresa no autorizada para este usuario.');
+    }
+
+    // Si está autorizado, retornar los clientes
+    return this.cliente.findMany({
+      where: { empresa_id },
+      orderBy: { created_at: 'desc' },
+    });
+  }
+
 }
