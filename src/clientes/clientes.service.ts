@@ -61,11 +61,36 @@ export class ClientesService extends PrismaClient implements OnModuleInit {
     }
   }
   //fin crear paciente
+  //************************************************************************************** */
+  //inicia obtener clientes
 
-  findAll() {
-    return this.cliente.findMany({})
+  async findAll(adminId: number) {
+    try {
+      const empresas = await this.client.send('empresas.obtener-empresas-por-admin', { admin_id: adminId }).toPromise();
+
+      if (!empresas || empresas.length === 0) {
+        return [];
+      }
+
+      const empresasIds = empresas.map((e) => e.emp_id);
+
+      const clientes = await this.cliente.findMany({
+        where: {
+          empresa_id: { in: empresasIds }
+        },
+        orderBy: {
+          created_at: 'desc',
+        },
+      });
+      return clientes;
+    } catch (error) {
+      this.logger.error('Error al listar clientes por admin', error.stack || error.message);
+      throw new InternalServerErrorException('No se pudo obtener la lista de clientes');
+    }
 
   }
+  //fin obtener clientes
+  //************************************************************************************** */
 
   async findOne(cli_id: number) {
     const propietario = await this.cliente.findFirst({
@@ -84,18 +109,18 @@ export class ClientesService extends PrismaClient implements OnModuleInit {
   async update(cli_id: number, updateClienteDto: UpdateClienteDto, updatedBy: number) {
     try {
       if (!cli_id) {
-        console.error('❌ Error: PROP_ID es undefined. No se puede actualizar.');
-        throw new BadRequestException('🚫 No se encontró el ID del propietario para actualizar.');
+        console.error('❌ Error: CLI_ID es undefined. No se puede actualizar.');
+        throw new BadRequestException('🚫 No se encontró el ID del cliente para actualizar.');
       }
 
-      const existingPropietario = await this.cliente.findUnique({ where: { cli_id } });
-      if (!existingPropietario) {
+      const existingCliente = await this.cliente.findUnique({ where: { cli_id } });
+      if (!existingCliente) {
         throw new BadRequestException(`🚫 No se encontró ninguna empresa con ID: ${cli_id}`);
       }
 
       console.log('📝 updateClienteDto recibido:', updateClienteDto);
 
-      const propietarioUpdated = await this.cliente.update({
+      const clienteUpdated = await this.cliente.update({
         where: { cli_id },
         data: {
           ...updateClienteDto,
@@ -103,12 +128,12 @@ export class ClientesService extends PrismaClient implements OnModuleInit {
         }
       });
 
-      console.log(`✅ propietario actualizado correctamente: ${updateClienteDto.cli_nombre}`);
-      return propietarioUpdated;
+      console.log(`✅ cliente actualizado correctamente: ${updateClienteDto.cli_nombre}`);
+      return clienteUpdated;
     } catch (error) {
-      console.error('❌ Error al actualizar propietario:', error);
+      console.error('❌ Error al actualizar cliente:', error);
       throw new RpcException({
-        message: 'Error al actualizar la propietario',
+        message: 'Error al actualizar la cliente',
         status: HttpStatus.INTERNAL_SERVER_ERROR,
       });
     }

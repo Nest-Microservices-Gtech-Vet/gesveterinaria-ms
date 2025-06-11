@@ -22,11 +22,14 @@ export class ClientesController {
     }, user);
   }
 
-
-  @MessagePattern('findAll_propietarios')
-  findAll() {
-    return this.clientesService.findAll();
+//inicia obtener clientes
+  @MessagePattern({ cmd: 'findAll_clientes' })
+  findAll(@Payload() payload:{adminId: number}) {
+    const {  adminId } = payload;
+    return this.clientesService.findAll(adminId);
   }
+  //fin obtener clientes
+  //************************************************************************************** */
 
   @MessagePattern('findPropietarioById')
   async findOne(@Payload('prop_id', ParseIntPipe) cli_id: number) {
@@ -34,10 +37,10 @@ export class ClientesController {
   }
 
 
-  @MessagePattern('updatePropietario')
+  @MessagePattern('updateCliente')
   async update(@Payload() payload: any) {
     const { cli_id, updatedBy, updateClienteDto } = payload
-    console.log(`EL PROPIETARIO ${payload}`)
+    console.log(`EL CLIENTE ${payload}`)
     return this.clientesService.update(cli_id, updateClienteDto, updatedBy);
   }
 
