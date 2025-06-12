@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, HttpStatus, Inject, Injectable, InternalServerErrorException, Logger, OnModuleInit, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, HttpStatus, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException, OnModuleInit, UnauthorizedException } from '@nestjs/common';
 
 import { PrismaClient } from '@prisma/client';
 import { NATS_SERVICE } from 'src/config';
@@ -76,7 +76,7 @@ export class ClientesService extends PrismaClient implements OnModuleInit {
 
       const clientes = await this.cliente.findMany({
         where: {
-          empresa_id: { in: empresasIds }
+          empresa_id: { in: empresasIds },activo:true
         },
         orderBy: {
           created_at: 'desc',
@@ -151,20 +151,52 @@ export class ClientesService extends PrismaClient implements OnModuleInit {
       });
     }
   }
-  //inicio actuializar cliente por id
+  //fin actuializar cliente por id
   //************************************************************************************************************ */
+  //ininio borrado logico
+  async remove(cli_id: number, admin_id: number, updatedBy: number) {
+    try {
+      const cliente = await this.cliente.findUnique({
+        where: { cli_id },
+      });
 
-  async remove(cli_id: number, updatedBy: number) {
-    await this.findOne(cli_id);
-    const propietariodeleted = await this.cliente.update({
-      where: { cli_id },
-      data: {
-        activo: false,
-        updatedBy,
+      if (!cliente) {
+        throw new NotFoundException(`Cliente con ID ${cli_id} no encontrado.`);
       }
-    });
-    return propietariodeleted;
+
+      const { valido } = await this.client
+        .send('empresas.validar-empresa-admin', {
+          empresa_id: cliente.empresa_id,
+          admin_id,
+        })
+        .toPromise();
+
+      if (!valido) {
+        throw new ForbiddenException('No autorizado para eliminar este cliente.');
+      }
+
+      const clienteEliminado = await this.cliente.update({
+        where: { cli_id },
+        data: {
+          activo: false,
+          updatedBy,
+        },
+      });
+
+      return {
+        message: `Cliente con ID ${cli_id} eliminado lógicamente.`,
+        cliente: clienteEliminado,
+      };
+    } catch (error) {
+      console.error('❌ Error al eliminar cliente:', error);
+    throw new RpcException({
+      message: 'Error al eliminar cliente',
+      status: HttpStatus.INTERNAL_SERVER_ERROR,
+       });
+    }
   }
+
+  //ininio borrado logico
   //*************************************************************************************************************** */
   async listarPorEmpresa(empresa_id: number, admin_id: number) {
     // Validar que el admin está relacionado con la empresa
@@ -182,7 +214,7 @@ export class ClientesService extends PrismaClient implements OnModuleInit {
 
     // Si está autorizado, retornar los clientes
     return this.cliente.findMany({
-      where: { empresa_id },
+      where: { empresa_id, activo:true },
       orderBy: { created_at: 'desc' },
     });
   }

@@ -52,13 +52,18 @@ export class ClientesController {
   }
   //FIN ACTUALIZAR CLIENTE
 //************************************************************************************** */
-  @MessagePattern('removePropietario')
-  remove(@Payload() payload: any) {
-    const { cli_id, updatedBy } = payload
+//inicio borrado logico
+  @MessagePattern({ cmd: 'cliente_delete' })
+  async remove(@Payload() payload: {
+    cli_id: number;
+    user:{id:number};
+    updatedBy;number;
+  }) {
+    const { cli_id,user, updatedBy } = payload
     console.log(`El propietario ${payload} a sido eliminado`)
-    return this.clientesService.remove(cli_id, updatedBy);
+    return this.clientesService.remove(cli_id,user.id, updatedBy);
   }
-
+// fin borrado logico 
 
   //**************************************************************************************** */
   // src/clientes/clientes.controller.ts (en gesveterinaria-ms)
