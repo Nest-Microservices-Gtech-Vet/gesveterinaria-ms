@@ -7,10 +7,11 @@ import { VacunaModule } from './vacuna/vacuna.module';
 import { EspecieModule } from './especie/especie.module';
 import { RazaModule } from './raza/raza.module';
 import { PatologiaModule } from './patologia/patologia.module';
+import { EspecieRazaPatologiaModule } from './especie-raza-patologia/especie-raza-patologia.module';
 
 @Module({
   controllers: [MascotasController],
   providers: [MascotasService],
-  imports: [HistoriaClinicaModule, ConsultaModule, VacunaModule, EspecieModule, RazaModule, PatologiaModule],
+  imports: [HistoriaClinicaModule, ConsultaModule, VacunaModule, EspecieModule, RazaModule, PatologiaModule, EspecieRazaPatologiaModule],
 })
 export class MascotasModule {}
