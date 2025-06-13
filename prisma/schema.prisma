@@ -14,18 +14,169 @@ datasource db {
 }
 
 model Cliente {
-  cli_id             Int      @id @default(autoincrement())
-  cli_identificacion String   @unique @db.VarChar(255)
-  cli_nombre         String   @db.VarChar(255)
-  cli_apellido       String   @db.VarChar(255)
-  cli_email          String   @unique @db.VarChar(255)
-  cli_celular        String   @db.VarChar(13)
-  cli_direccion      String   @db.VarChar(255)
-  cli_observaciones  String   @db.VarChar(255)
+  cli_id             Int       @id @default(autoincrement())
+  cli_identificacion String    @unique @db.VarChar(255)
+  cli_nombre         String    @db.VarChar(255)
+  cli_apellido       String    @db.VarChar(255)
+  cli_email          String    @unique @db.VarChar(255)
+  cli_celular        String    @db.VarChar(13)
+  cli_direccion      String    @db.VarChar(255)
+  cli_observaciones  String    @db.VarChar(255)
   empresa_id         Int // ← para multitenencia
+  activo             Boolean   @default(true)
+  createdBy          Int?
+  updatedBy          Int?
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+  //relacion con mascotas
+  mascotas           Mascota[]
+}
+
+model Mascota {
+  mas_id           Int       @id @default(autoincrement())
+  mas_nombre       String    @db.VarChar(255)
+  mas_fechaNac     DateTime?
+  mas_peso         Float?
+  mas_color        String?   @db.VarChar(255)
+  mas_esterilizado Boolean   @default(false)
+  mas_microchip    String?   @unique @db.VarChar(255)
+  mas_foto         String?   @db.VarChar(255) // ← URL o nombre de archivo
+  mas_notas        String?   @db.VarChar(255)
+
+  especie_id Int
+  raza_id    Int
+  cliente_id Int
+  empresa_id Int
+
+  activo     Boolean  @default(true)
+  createdBy  Int?
+  updatedBy  Int?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  especie         Especie          @relation(fields: [especie_id], references: [esp_id])
+  raza            Raza             @relation(fields: [raza_id], references: [raz_id])
+  propietario     Cliente          @relation(fields: [cliente_id], references: [cli_id])
+  historiaClinica HistoriaClinica?
+}
+
+model HistoriaClinica {
+  hic_id     Int    @id @default(autoincrement())
+  hic_estado String @default("Abierta") @db.VarChar(50)
+  mascota_id Int    @unique
+
+  empresa_id Int
+  activo     Boolean  @default(true)
+  createdBy  Int?
+  updatedBy  Int?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  mascota   Mascota    @relation(fields: [mascota_id], references: [mas_id])
+  consultas Consulta[]
+}
+
+model Consulta {
+  con_id              Int      @id @default(autoincrement())
+  con_fecha           DateTime @default(now())
+  con_motivo          String   @db.VarChar(255)
+  con_sintomas        String?  @db.VarChar(255)
+  con_diagnostico     String?  @db.VarChar(255)
+  con_tratamiento     String?  @db.VarChar(255)
+  con_recomendaciones String?  @db.VarChar(255)
+
+  historiaClinica_id Int
+  empresa_id         Int
   activo             Boolean  @default(true)
   createdBy          Int?
   updatedBy          Int?
   created_at         DateTime @default(now())
   updated_at         DateTime @updatedAt
+
+  historiaClinica HistoriaClinica @relation(fields: [historiaClinica_id], references: [hic_id])
+  vacunas         Vacuna[]
+}
+
+model Vacuna {
+  vac_id          Int       @id @default(autoincrement())
+  vac_nombre      String    @db.VarChar(255)
+  vac_fecha       DateTime
+  vac_proxima     DateTime?
+  vac_observacion String?   @db.VarChar(255)
+
+  consulta_id Int
+  empresa_id  Int
+  activo      Boolean  @default(true)
+  createdBy   Int?
+  updatedBy   Int?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  consulta Consulta @relation(fields: [consulta_id], references: [con_id])
+}
+
+model Especie {
+  esp_id     Int    @id @default(autoincrement())
+  esp_nombre String @unique @db.VarChar(255)
+
+  empresa_id Int
+  activo     Boolean  @default(true)
+  createdBy  Int?
+  updatedBy  Int?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  razas                Raza[]
+  mascotas             Mascota[]
+  EspecieRazaPatologia EspecieRazaPatologia[]
+}
+
+model Raza {
+  raz_id     Int    @id @default(autoincrement())
+  raz_nombre String @db.VarChar(255)
+  especie_id Int
+
+  empresa_id Int
+  activo     Boolean  @default(true)
+  createdBy  Int?
+  updatedBy  Int?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  especie              Especie                @relation(fields: [especie_id], references: [esp_id])
+  mascotas             Mascota[]
+  EspecieRazaPatologia EspecieRazaPatologia[]
+}
+
+model Patologia {
+  pat_id     Int     @id @default(autoincrement())
+  pat_nombre String  @db.VarChar(255)
+  pat_desc   String? @db.VarChar(255)
+
+  empresa_id Int
+  activo     Boolean  @default(true)
+  createdBy  Int?
+  updatedBy  Int?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  especieRelaciones EspecieRazaPatologia[]
+}
+
+model EspecieRazaPatologia {
+  erp_id       Int  @id @default(autoincrement())
+  especie_id   Int?
+  raza_id      Int?
+  patologia_id Int
+
+  empresa_id Int
+  activo     Boolean  @default(true)
+  createdBy  Int?
+  updatedBy  Int?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  especie   Especie?  @relation(fields: [especie_id], references: [esp_id])
+  raza      Raza?     @relation(fields: [raza_id], references: [raz_id])
+  patologia Patologia @relation(fields: [patologia_id], references: [pat_id])
 }
