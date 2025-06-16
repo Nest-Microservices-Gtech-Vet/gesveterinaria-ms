@@ -17,9 +17,10 @@ export class MascotasController {
     },user);
   }
 
-  @MessagePattern('findAllMascotas')
-  findAll() {
-    return this.mascotasService.findAll();
+  @MessagePattern({ cmd: 'findAll_mascotas' })
+  findAll(@Payload() payload: { adminId: number }) {
+    const { adminId } = payload;
+    return this.mascotasService.findAll(adminId);
   }
 
   @MessagePattern('findOneMascota')

@@ -43,36 +43,69 @@ export class MascotasService extends PrismaClient implements OnModuleInit {
           mas_fechaNac: createMascotaDto.mas_fechaNac,
           mas_peso: createMascotaDto.mas_peso,
           mas_color: createMascotaDto.mas_color,
-          mas_esterilizado: !!createMascotaDto.mas_esterilizado ,
+          mas_esterilizado: !!createMascotaDto.mas_esterilizado,
           mas_microchip: createMascotaDto.mas_microchip,
           mas_foto: createMascotaDto.mas_foto,
           mas_notas: createMascotaDto.mas_notas,
-          empresa_id:createMascotaDto.empresa_id,
-          activo: createMascotaDto.activo?? true,
+          empresa_id: createMascotaDto.empresa_id,
+          activo: createMascotaDto.activo ?? true,
           createdBy: user.id,
           especie: {
-            connect:{ esp_id: createMascotaDto.especie_id}
+            connect: { esp_id: createMascotaDto.especie_id }
           },
           raza: {
-            connect:{ raz_id: createMascotaDto.raza_id}
+            connect: { raz_id: createMascotaDto.raza_id }
           },
           propietario: {
-            connect:{ cli_id:createMascotaDto.cliente_id}
+            connect: { cli_id: createMascotaDto.cliente_id }
           }
 
-          
+
         }
       });
       return mascotaCrear
     } catch (error) {
       this.logger.error('Error en creación de mascota', error.stack || error.message);
-            throw new InternalServerErrorException('No se pudo crear el mascota');
+      throw new InternalServerErrorException('No se pudo crear el mascota');
     }
   }
 
-  findAll() {
-    return `This action returns all mascotas`;
+  async findAll(adminId: number) {
+    try {
+      // 1. Obtener las empresas del admin
+      const empresas = await this.client.send('empresas.obtener-empresas-por-admin', {
+        admin_id: adminId,
+      }).toPromise();
+
+      if (!empresas || empresas.length === 0) {
+        return [];
+      }
+
+      const empresasIds = empresas.map((e) => e.emp_id);
+
+      // 2. Buscar mascotas asociadas a esas empresas
+      const mascotas = await this.mascota.findMany({
+        where: {
+          empresa_id: { in: empresasIds },
+          activo: true,
+        },
+        orderBy: {
+          created_at: 'desc',
+        },
+        include: {
+          propietario: true,
+          // asegúrate de que esta relación esté definida en tu modelo Prisma
+        },
+      });
+
+      return mascotas;
+
+    } catch (error) {
+      this.logger.error('Error al listar mascotas por admin', error.stack || error.message);
+      throw new InternalServerErrorException('No se pudo obtener la lista de mascotas');
+    }
   }
+
 
   findOne(id: number) {
     return `This action returns a #${id} mascota`;
