@@ -11,6 +11,7 @@ export class CreateMascotaDto {
     mas_fechaNac?: Date;
 
     @IsOptional()
+    @Type(() => Number)
     @IsNumber()
     mas_peso?: number;
 
@@ -33,6 +34,10 @@ export class CreateMascotaDto {
     @IsOptional()
     @IsString()
     mas_notas?: string;
+
+    @IsOptional()
+    @IsBoolean()
+    activo: boolean;
 
     @IsInt()
     cliente_id: number;

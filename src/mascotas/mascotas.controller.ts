@@ -8,9 +8,13 @@ import { UpdateMascotaDto } from './dto/update-mascota.dto';
 export class MascotasController {
   constructor(private readonly mascotasService: MascotasService) {}
 
-  @MessagePattern('createMascota')
-  create(@Payload() createMascotaDto: CreateMascotaDto) {
-    return this.mascotasService.create(createMascotaDto);
+  @MessagePattern({ cmd: 'crear_mascota' })
+  create(@Payload() payload:{createMascotaDto: CreateMascotaDto; user: { id: number }}) {
+    const {createMascotaDto,user} = payload;
+    return this.mascotasService.create({
+      ...createMascotaDto,
+      createdBy: user.id
+    },user);
   }
 
   @MessagePattern('findAllMascotas')
