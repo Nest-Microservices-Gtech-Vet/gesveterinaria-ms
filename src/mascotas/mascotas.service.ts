@@ -2,7 +2,7 @@ import { ForbiddenException, Inject, Injectable, InternalServerErrorException, L
 import { CreateMascotaDto } from './dto/create-mascota.dto';
 import { UpdateMascotaDto } from './dto/update-mascota.dto';
 import { NATS_SERVICE } from 'src/config';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { PrismaClient } from '@prisma/client';
 
 @Injectable()
@@ -107,8 +107,30 @@ export class MascotasService extends PrismaClient implements OnModuleInit {
   }
 
 
-  findOne(id: number) {
-    return `This action returns a #${id} mascota`;
+  async findOne(mas_id: number, userId: number) {
+    const mascota = await this.mascota.findFirst({
+      where: {
+        mas_id
+      }
+    });
+    if (!mascota) {
+      throw new RpcException({
+        message: `[gesveterinaria-ms]mascota  con el # ${mas_id} no encontrado`
+      })
+    }
+
+    // Validar si ese user (admin) tiene acceso a esa empresa
+    const { valido } = await this.client.send('empresas.validar-empresa-admin', {
+      empresa_id: mascota.empresa_id,
+      admin_id: userId,
+    }).toPromise();
+
+    if (!valido) {
+      throw new RpcException({
+        message: `El usuario no tiene acceso a la empresa ${mascota.empresa_id}`,
+      });
+    }
+    return mascota;
   }
 
   update(id: number, updateMascotaDto: UpdateMascotaDto) {

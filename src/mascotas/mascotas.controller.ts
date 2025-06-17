@@ -1,4 +1,4 @@
-import { Controller } from '@nestjs/common';
+import { Controller, ParseIntPipe } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { MascotasService } from './mascotas.service';
 import { CreateMascotaDto } from './dto/create-mascota.dto';
@@ -23,9 +23,9 @@ export class MascotasController {
     return this.mascotasService.findAll(adminId);
   }
 
-  @MessagePattern('findOneMascota')
-  findOne(@Payload() id: number) {
-    return this.mascotasService.findOne(id);
+  @MessagePattern({ cmd: 'mascotaById'})
+  findOne(@Payload()  payload: { id: number, user: { id: number } }) {
+    return this.mascotasService.findOne(payload.id, payload.user.id);
   }
 
   @MessagePattern('updateMascota')
