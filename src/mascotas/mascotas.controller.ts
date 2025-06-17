@@ -6,15 +6,15 @@ import { UpdateMascotaDto } from './dto/update-mascota.dto';
 
 @Controller()
 export class MascotasController {
-  constructor(private readonly mascotasService: MascotasService) {}
+  constructor(private readonly mascotasService: MascotasService) { }
 
   @MessagePattern({ cmd: 'crear_mascota' })
-  create(@Payload() payload:{createMascotaDto: CreateMascotaDto; user: { id: number }}) {
-    const {createMascotaDto,user} = payload;
+  create(@Payload() payload: { createMascotaDto: CreateMascotaDto; user: { id: number } }) {
+    const { createMascotaDto, user } = payload;
     return this.mascotasService.create({
       ...createMascotaDto,
       createdBy: user.id
-    },user);
+    }, user);
   }
 
   @MessagePattern({ cmd: 'findAll_mascotas' })
@@ -23,27 +23,33 @@ export class MascotasController {
     return this.mascotasService.findAll(adminId);
   }
 
-  @MessagePattern({ cmd: 'mascotaById'})
-  findOne(@Payload()  payload: { id: number, user: { id: number } }) {
+  @MessagePattern({ cmd: 'mascotaById' })
+  findOne(@Payload() payload: { id: number, user: { id: number } }) {
     return this.mascotasService.findOne(payload.id, payload.user.id);
   }
 
   @MessagePattern({ cmd: 'mascota_update' })
   async update(
-    @Payload() payload:{
+    @Payload() payload: {
       mas_id: number;
       updateMascotaDto: UpdateMascotaDto;
       updatedBy: number;
-      user: { id:number};
+      user: { id: number };
     }
   ) {
-    const { mas_id, updateMascotaDto,updatedBy,user} =payload
+    const { mas_id, updateMascotaDto, updatedBy, user } = payload
     console.log(`LA MASCOTA ${payload}`)
-    return await this.mascotasService.update(mas_id,updateMascotaDto,updatedBy, user.id)
+    return await this.mascotasService.update(mas_id, updateMascotaDto, updatedBy, user.id)
   }
 
-  @MessagePattern('removeMascota')
-  remove(@Payload() id: number) {
-    return this.mascotasService.remove(id);
+  @MessagePattern({ cmd: 'mascota_delete' })
+  async remove(@Payload() payload: {
+    mas_id: number;
+    user: { id: number };
+    updatedBy: number;
+  }) {
+    const { mas_id,user,updatedBy} = payload
+    console.log(`El propietario ${payload} a sido eliminado`)
+    return this.mascotasService.remove(mas_id,user.id,updatedBy)
   }
 }

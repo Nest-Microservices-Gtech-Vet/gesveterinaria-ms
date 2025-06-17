@@ -57,7 +57,7 @@ export class ClientesController {
   async remove(@Payload() payload: {
     cli_id: number;
     user:{id:number};
-    updatedBy;number;
+    updatedBy:number;
   }) {
     const { cli_id,user, updatedBy } = payload
     console.log(`El propietario ${payload} a sido eliminado`)
