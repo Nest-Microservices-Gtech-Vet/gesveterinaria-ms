@@ -21,7 +21,7 @@ export class CreateMascotaDto {
 
     @IsOptional()
     @IsBoolean()
-    mas_esterilizado?: Boolean;
+    mas_esterilizado?: boolean;
 
     @IsOptional()
     @IsString()

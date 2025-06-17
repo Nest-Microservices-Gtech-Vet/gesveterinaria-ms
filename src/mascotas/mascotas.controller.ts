@@ -28,9 +28,18 @@ export class MascotasController {
     return this.mascotasService.findOne(payload.id, payload.user.id);
   }
 
-  @MessagePattern('updateMascota')
-  update(@Payload() updateMascotaDto: UpdateMascotaDto) {
-    return this.mascotasService.update(updateMascotaDto.id, updateMascotaDto);
+  @MessagePattern({ cmd: 'mascota_update' })
+  async update(
+    @Payload() payload:{
+      mas_id: number;
+      updateMascotaDto: UpdateMascotaDto;
+      updatedBy: number;
+      user: { id:number};
+    }
+  ) {
+    const { mas_id, updateMascotaDto,updatedBy,user} =payload
+    console.log(`LA MASCOTA ${payload}`)
+    return await this.mascotasService.update(mas_id,updateMascotaDto,updatedBy, user.id)
   }
 
   @MessagePattern('removeMascota')

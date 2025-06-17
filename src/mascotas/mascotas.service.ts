@@ -1,9 +1,9 @@
-import { ForbiddenException, Inject, Injectable, InternalServerErrorException, Logger, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, HttpStatus, Inject, Injectable, InternalServerErrorException, Logger, OnModuleInit } from '@nestjs/common';
 import { CreateMascotaDto } from './dto/create-mascota.dto';
 import { UpdateMascotaDto } from './dto/update-mascota.dto';
 import { NATS_SERVICE } from 'src/config';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 
 @Injectable()
 export class MascotasService extends PrismaClient implements OnModuleInit {
@@ -133,9 +133,84 @@ export class MascotasService extends PrismaClient implements OnModuleInit {
     return mascota;
   }
 
-  update(id: number, updateMascotaDto: UpdateMascotaDto) {
-    return `This action updates a #${id} mascota`;
+  async update(
+  mas_id: number,
+  updateMascotaDto: UpdateMascotaDto,
+  updatedBy: number,
+  admin_id: number
+) {
+  try {
+    if (!mas_id) {
+      throw new BadRequestException('🚫 No se encontró el ID de la mascota para actualizar.');
+    }
+
+    const existingMascota = await this.mascota.findUnique({ where: { mas_id } });
+
+    if (!existingMascota) {
+      throw new BadRequestException(`🚫 No se encontró ninguna mascota con ID: ${mas_id}`);
+    }
+
+    const { valido } = await this.client
+      .send('empresas.validar-empresa-admin', {
+        empresa_id: existingMascota.empresa_id,
+        admin_id,
+      })
+      .toPromise();
+
+    if (!valido) {
+      throw new ForbiddenException('No autorizado para modificar esta mascota');
+    }
+
+    // ✅ Desestructuramos campos que requieren conexión
+    const {
+      especie_id,
+      raza_id,
+      cliente_id,
+      createdBy,
+      updatedBy: dtoUpdatedBy,
+      empresa_id, // si lo usas en algún otro contexto
+      ...restoCampos
+    } = updateMascotaDto;
+
+    const data: Prisma.MascotaUpdateInput = {
+      ...restoCampos,
+      updatedBy,
+
+      // Solo conectamos relaciones si los valores están presentes
+      ...(especie_id && {
+        especie: {
+          connect: { esp_id: especie_id },
+        },
+      }),
+
+      ...(raza_id && {
+        raza: {
+          connect: { raz_id: raza_id },
+        },
+      }),
+
+      ...(cliente_id && {
+        propietario: {
+          connect: { cli_id: cliente_id },
+        },
+      }),
+    };
+
+    const mascotaUpdated = await this.mascota.update({
+      where: { mas_id },
+      data,
+    });
+
+    return mascotaUpdated;
+  } catch (error) {
+    console.error('❌ Error al actualizar mascota:', error);
+    throw new RpcException({
+      message: 'Error al actualizar la mascota',
+      status: HttpStatus.INTERNAL_SERVER_ERROR,
+    });
   }
+}
+
 
   remove(id: number) {
     return `This action removes a #${id} mascota`;
