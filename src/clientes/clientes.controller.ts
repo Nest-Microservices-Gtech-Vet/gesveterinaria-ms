@@ -31,11 +31,11 @@ export class ClientesController {
   //fin obtener clientes
   //************************************************************************************** */
   //inicia obtener clientes por id
-  // @MessagePattern('findClienteById')
-  // async findOne(@Payload('prop_id', ParseIntPipe) payload: { cli_id: number, adminId: number }) {
-  //   const { adminId } = payload
-  //   return this.clientesService.findOne(cli_id);
-  // }
+  @MessagePattern({ cmd: 'findOne_cliente'})
+  async findOne(@Payload() payload: { cli_id: number, user: { id: number }  }) {
+
+    return this.clientesService.findOne(payload.cli_id, payload.user.id);
+  }
   //fin obtener clientes por id
   //************************************************************************************** */
 //INICIO ACTUALIZAR CLIENTE

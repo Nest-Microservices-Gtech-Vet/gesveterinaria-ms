@@ -92,7 +92,7 @@ export class ClientesService extends PrismaClient implements OnModuleInit {
   //fin obtener clientes
   //************************************************************************************** */
   //inicia encontrar cliente por id
-  async findOne(cli_id: number) {
+  async findOne(cli_id: number,userId: number) {
     const cliente = await this.cliente.findFirst({
       where: {
         cli_id
