@@ -13,8 +13,8 @@ export class EspecieController {
     return this.especieService.create(createEspecieDto);
   }
 
-  @MessagePattern('findAllEspecie')
-  findAll() {
+  @MessagePattern({ cmd: 'findAll_especie'})
+  findAll(@Payload() _payload:any) {
     return this.especieService.findAll();
   }
 

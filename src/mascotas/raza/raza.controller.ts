@@ -13,8 +13,8 @@ export class RazaController {
     return this.razaService.create(createRazaDto);
   }
 
-  @MessagePattern('findAllRaza')
-  findAll() {
+  @MessagePattern({ cmd: 'findAll_razas' })
+  findAll(@Payload() _payload:any) {
     return this.razaService.findAll();
   }
 
