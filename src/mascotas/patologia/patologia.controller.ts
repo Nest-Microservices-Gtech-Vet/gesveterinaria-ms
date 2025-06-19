@@ -13,8 +13,8 @@ export class PatologiaController {
     return this.patologiaService.create(createPatologiaDto);
   }
 
-  @MessagePattern('findAllPatologia')
-  findAll() {
+  @MessagePattern({ cmd: 'findAll_patologias' })
+  findAll(@Payload() _payload:any) {
     return this.patologiaService.findAll();
   }
 

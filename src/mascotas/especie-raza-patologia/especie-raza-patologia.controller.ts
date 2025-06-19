@@ -13,8 +13,8 @@ export class EspecieRazaPatologiaController {
     return this.especieRazaPatologiaService.create(createEspecieRazaPatologiaDto);
   }
 
-  @MessagePattern('findAllEspecieRazaPatologia')
-  findAll() {
+  @MessagePattern({ cmd: 'findAll_especieRazaPat' })
+  findAll(@Payload() _payload:any) {
     return this.especieRazaPatologiaService.findAll();
   }
 
