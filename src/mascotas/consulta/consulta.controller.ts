@@ -8,9 +8,9 @@ import { UpdateConsultaDto } from './dto/update-consulta.dto';
 export class ConsultaController {
   constructor(private readonly consultaService: ConsultaService) {}
 
-  @MessagePattern('createConsulta')
-  create(@Payload() createConsultaDto: CreateConsultaDto) {
-    return this.consultaService.create(createConsultaDto);
+  @MessagePattern({ cmd: 'crear_consulta' })
+  create( @Payload() payload: { createConsultaDto: CreateConsultaDto; user: { id: number } }) {
+    return this.consultaService.create(payload.createConsultaDto,payload.user);
   }
 
   @MessagePattern('findAllConsulta')

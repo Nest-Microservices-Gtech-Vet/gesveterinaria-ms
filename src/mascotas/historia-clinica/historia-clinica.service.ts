@@ -1,13 +1,67 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { CreateHistoriaClinicaDto } from './dto/create-historia-clinica.dto';
 import { UpdateHistoriaClinicaDto } from './dto/update-historia-clinica.dto';
+import { PrismaClient } from '@prisma/client';
+import { NATS_SERVICE } from 'src/config';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
-export class HistoriaClinicaService {
-  create(createHistoriaClinicaDto: CreateHistoriaClinicaDto) {
-    return 'This action adds a new historiaClinica';
+export class HistoriaClinicaService extends PrismaClient implements OnModuleInit {
+
+  private readonly logger = new Logger('GestVeterinaria-Service-Mascotas');
+  constructor(
+    @Inject(NATS_SERVICE) private readonly client: ClientProxy,
+  ) {
+    super();
+  }
+  onModuleInit() {
+    this.$connect
+    this.logger.log('gesVeterinania historial clinico Mascotas conectado')
   }
 
+  //inicia crear historial clinico
+  async create(createHistoriaClinicaDto: CreateHistoriaClinicaDto, user: { id: number }) {
+    try {
+      this.logger.debug('DTO recibido:', createHistoriaClinicaDto);
+      this.logger.log(`Validando empresa ${createHistoriaClinicaDto.empresa_id} para el admin ${user.id}`);
+      const { valido, motivo } = await this.client
+        .send('empresas.validar-empresa-admin', {
+          empresa_id: createHistoriaClinicaDto.empresa_id,
+          admin_id: user.id,
+        })
+        .toPromise();
+
+      if (!valido) {
+        this.logger.warn(`Empresa no válida para el admin: ${motivo}`);
+        throw new ForbiddenException('Empresa no autorizada para este usuario.');
+      }
+
+      const mascota = await this.mascota.findFirst({
+        where: {
+          mas_id: createHistoriaClinicaDto.mascota_id,
+          empresa_id: createHistoriaClinicaDto.empresa_id,// multitenencia
+        },
+      });
+
+      if (!mascota) throw new NotFoundException('Mascota no encontrada');
+
+      const crearHistorialClinico = await this.historiaClinica.create({
+        data: {
+          hic_estado: createHistoriaClinicaDto.hic_estado ?? 'Abierta',
+          empresa_id: createHistoriaClinicaDto.empresa_id,
+          mascota_id: createHistoriaClinicaDto.mascota_id,
+          createdBy: user.id,
+        }
+      });
+      return crearHistorialClinico;
+    } catch (error) {
+      this.logger.error('Error en creación de historial clinico en service', error.stack || error.message);
+      throw new InternalServerErrorException('No se pudo crear el historial clinico en service');
+
+    }
+  }
+  //finaliza crear historial clinico
+//************************************************************************ */
   findAll() {
     return `This action returns all historiaClinica`;
   }

@@ -93,8 +93,9 @@ model Consulta {
   created_at         DateTime @default(now())
   updated_at         DateTime @updatedAt
 
-  historiaClinica HistoriaClinica @relation(fields: [historiaClinica_id], references: [hic_id])
-  vacunas         Vacuna[]
+  historiaClinica   HistoriaClinica     @relation(fields: [historiaClinica_id], references: [hic_id])
+  vacunas           Vacuna[]
+  ConsultasPatologia ConsultaPatologia[]
 }
 
 model Vacuna {
@@ -161,6 +162,7 @@ model Patologia {
   updated_at DateTime @updatedAt
 
   especieRelaciones EspecieRazaPatologia[]
+  ConsultaPatologia ConsultaPatologia[]
 }
 
 model EspecieRazaPatologia {
@@ -178,5 +180,21 @@ model EspecieRazaPatologia {
 
   especie   Especie?  @relation(fields: [especie_id], references: [esp_id])
   raza      Raza?     @relation(fields: [raza_id], references: [raz_id])
+  patologia Patologia @relation(fields: [patologia_id], references: [pat_id])
+}
+
+model ConsultaPatologia {
+  cp_id        Int @id @default(autoincrement())
+  consulta_id  Int
+  patologia_id Int
+
+  empresa_id Int
+  activo     Boolean  @default(true)
+  createdBy  Int?
+  updatedBy  Int?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  consulta  Consulta  @relation(fields: [consulta_id], references: [con_id])
   patologia Patologia @relation(fields: [patologia_id], references: [pat_id])
 }

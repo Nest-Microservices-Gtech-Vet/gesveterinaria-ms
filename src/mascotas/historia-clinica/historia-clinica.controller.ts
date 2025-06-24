@@ -8,9 +8,13 @@ import { UpdateHistoriaClinicaDto } from './dto/update-historia-clinica.dto';
 export class HistoriaClinicaController {
   constructor(private readonly historiaClinicaService: HistoriaClinicaService) {}
 
-  @MessagePattern('createHistoriaClinica')
-  create(@Payload() createHistoriaClinicaDto: CreateHistoriaClinicaDto) {
-    return this.historiaClinicaService.create(createHistoriaClinicaDto);
+  @MessagePattern({ cmd: 'crear_historiaClinica' })
+  create(@Payload() payload: {createHistoriaClinicaDto: CreateHistoriaClinicaDto;user: { id: number } }) {
+    const { createHistoriaClinicaDto,user} = payload;
+    return this.historiaClinicaService.create({
+      ...createHistoriaClinicaDto,
+      createdBy: user.id,
+    }, user);
   }
 
   @MessagePattern('findAllHistoriaClinica')
