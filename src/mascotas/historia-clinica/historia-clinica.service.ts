@@ -3,7 +3,7 @@ import { CreateHistoriaClinicaDto } from './dto/create-historia-clinica.dto';
 import { UpdateHistoriaClinicaDto } from './dto/update-historia-clinica.dto';
 import { PrismaClient } from '@prisma/client';
 import { NATS_SERVICE } from 'src/config';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class HistoriaClinicaService extends PrismaClient implements OnModuleInit {
@@ -61,8 +61,45 @@ export class HistoriaClinicaService extends PrismaClient implements OnModuleInit
     }
   }
   //finaliza crear historial clinico
-//************************************************************************ */
-  findAll() {
+  //************************************************************************ */
+  private async obtenerEmpresaIdDesdeMascota(mascota_id: number) {
+    const mascota = await this.mascota.findUnique({
+      where: { mas_id: mascota_id },
+      select: { empresa_id: true },
+    });
+
+    if (!mascota) {
+      throw new RpcException('Mascota no encontrada para asignar empresa_id');
+    }
+
+    return mascota.empresa_id;
+  }
+  //iniica obtener amscota histora clinica
+  async findByMascota(mascota_id: number) {
+    const historia = await this.historiaClinica.findUnique({
+      where: { mascota_id },
+        include: {
+          consultas: true, // 👈 Esto es lo que hace que Prisma traiga las consultas asociadas
+        },
+    });
+
+    if (!historia) {
+      // Crear historia si no existe
+      return this.historiaClinica.create({
+        data: {
+          mascota_id,
+          empresa_id: await this.obtenerEmpresaIdDesdeMascota(mascota_id),
+          hic_estado: 'Abierta',
+        }
+      });
+    }
+
+    return historia;
+  }
+
+  //fin obtener amscota histora clinica
+  //************************************************************** */
+  async findAll() {
     return `This action returns all historiaClinica`;
   }
 
