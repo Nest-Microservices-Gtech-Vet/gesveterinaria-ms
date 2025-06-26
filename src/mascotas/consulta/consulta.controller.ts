@@ -13,19 +13,23 @@ export class ConsultaController {
     return this.consultaService.create(payload.createConsultaDto,payload.user);
   }
 
-  @MessagePattern('findAllConsulta')
-  findAll() {
-    return this.consultaService.findAll();
+  @MessagePattern({ cmd: 'consultaById' })
+  async findOne(@Payload() payload: { id: number, user: { id: number }  }) {
+
+    return this.consultaService.findOneConsulta(payload.id, payload.user.id);
   }
 
-  @MessagePattern('findOneConsulta')
-  findOne(@Payload() id: number) {
-    return this.consultaService.findOne(id);
-  }
 
-  @MessagePattern('updateConsulta')
-  update(@Payload() updateConsultaDto: UpdateConsultaDto) {
-    return this.consultaService.update(updateConsultaDto.id, updateConsultaDto);
+  @MessagePattern({ cmd: 'consulta_update' })
+  async updateConsulta(
+    @Payload() payload:{
+      id:number;
+      updateConsultaDto: UpdateConsultaDto;
+      updatedBy:number;
+      user: { id: number};
+    }) {
+    const{id,updateConsultaDto,updatedBy,user} = payload
+    return this.consultaService.update(id,updateConsultaDto,updatedBy,user.id);
   }
 
   @MessagePattern('removeConsulta')

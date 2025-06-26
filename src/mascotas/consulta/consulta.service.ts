@@ -1,9 +1,9 @@
-import { ForbiddenException, Inject, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, HttpStatus, Inject, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { CreateConsultaDto } from './dto/create-consulta.dto';
 import { UpdateConsultaDto } from './dto/update-consulta.dto';
 import { PrismaClient } from '@prisma/client';
 import { NATS_SERVICE } from 'src/config';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class ConsultaService extends PrismaClient implements OnModuleInit {
@@ -72,12 +72,60 @@ export class ConsultaService extends PrismaClient implements OnModuleInit {
     return `This action returns all consulta`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} consulta`;
+  async findOneConsulta(con_id: number,userId: number) {
+
+    
+    const consulta = await this.consulta.findFirst({
+      where:{
+        con_id
+      }
+    });
+    if (!consulta) {
+      throw new RpcException({
+        message: `[gesveterinaria-ms]Consulta  con el # ${con_id} no encontrado`
+      })
+    }
+    return consulta;
   }
 
-  update(id: number, updateConsultaDto: UpdateConsultaDto) {
-    return `This action updates a #${id} consulta`;
+  async update(con_id: number, updateConsultaDto: UpdateConsultaDto, updatedBy: number, admin_id: number,) {
+    try {
+      if (!con_id) {
+        throw new BadRequestException('🚫 No se encontró el ID de la consulta para actualizar.');
+      }
+
+      const existingConsulta = await this.consulta.findUnique({ where: { con_id } });
+
+      if (!existingConsulta) {
+        throw new BadRequestException(`🚫 No se encontró ninguna consulta con ID: ${con_id}`);
+      }
+
+      const { valido } = await this.client
+        .send('empresas.validar-empresa-admin', {
+          empresa_id: existingConsulta.empresa_id,
+          admin_id,
+        })
+        .toPromise();
+
+      if (!valido) {
+        throw new ForbiddenException('No autorizado para modificar esta consulta');
+      }
+      const consultaUpdated = await this.consulta.update({
+        where: { con_id },
+        data: {
+          ...updateConsultaDto,
+          updatedBy,
+        }
+      });
+      console.log(`✅ consulta actualizada correctamente: ${updateConsultaDto.con_motivo}`);
+      return consultaUpdated;
+    } catch (error) {
+      console.error('❌ Error al actualizar consulta:', error);
+      throw new RpcException({
+        message: 'Error al actualizar la consulta',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
+    }
   }
 
   remove(id: number) {

@@ -78,9 +78,18 @@ export class HistoriaClinicaService extends PrismaClient implements OnModuleInit
   async findByMascota(mascota_id: number) {
     const historia = await this.historiaClinica.findUnique({
       where: { mascota_id },
-        include: {
-          consultas: true, // 👈 Esto es lo que hace que Prisma traiga las consultas asociadas
+      include: {
+        mascota: {
+          include: {
+            propietario: true,
+          }
         },
+        consultas: {
+          orderBy: {
+            con_fecha: 'desc',
+          }
+        }
+      },
     });
 
     if (!historia) {
