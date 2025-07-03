@@ -27,6 +27,37 @@ export class EspecieRazaPatologiaService extends PrismaClient implements OnModul
     return especieRazaPatologia;
   }
 
+
+  // servicio
+  async getByEspecieRaza(especieId: number | null, razaId: number | null) {
+    const where: any = { activo: true };
+
+    if (especieId !== null) where.especie_id = especieId;
+    if (razaId !== null) where.raza_id = razaId;
+
+    console.log('🎯 Filtros aplicados en Prisma:', where);
+
+    const resultado = await this.especieRazaPatologia.findMany({
+      where,
+      include: {
+        patologia: true,
+      },
+    });
+
+    console.log('📦 Resultado encontrado:', resultado);
+
+    return resultado;
+  }
+
+
+
+
+
+
+
+
+
+
   findOne(id: number) {
     return `This action returns a #${id} especieRazaPatologia`;
   }

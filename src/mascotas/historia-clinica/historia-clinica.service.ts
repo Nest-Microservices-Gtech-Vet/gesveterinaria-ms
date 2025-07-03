@@ -45,11 +45,20 @@ export class HistoriaClinicaService extends PrismaClient implements OnModuleInit
 
       if (!mascota) throw new NotFoundException('Mascota no encontrada');
 
+
+      const ultimoNumero = await this.historiaClinica.aggregate({
+        where: { empresa_id: createHistoriaClinicaDto.empresa_id },
+        _max: { hic_numero_local: true },
+      });
+
+      const nuevoNumero = (ultimoNumero._max.hic_numero_local ?? 0) + 1;
+
       const crearHistorialClinico = await this.historiaClinica.create({
         data: {
           hic_estado: createHistoriaClinicaDto.hic_estado ?? 'Abierta',
           empresa_id: createHistoriaClinicaDto.empresa_id,
           mascota_id: createHistoriaClinicaDto.mascota_id,
+          hic_numero_local: nuevoNumero,
           createdBy: user.id,
         }
       });
@@ -76,35 +85,50 @@ export class HistoriaClinicaService extends PrismaClient implements OnModuleInit
   }
   //iniica obtener amscota histora clinica
   async findByMascota(mascota_id: number) {
-    const historia = await this.historiaClinica.findUnique({
-      where: { mascota_id },
+  const historia = await this.historiaClinica.findUnique({
+    where: { mascota_id },
+    include: {
+      mascota: {
+        include: {
+          propietario: true,
+        },
+      },
+      consultas: {
+        orderBy: {
+          con_fecha: 'desc',
+        },
+      },
+    },
+  });
+
+  if (!historia) {
+    const empresa_id = await this.obtenerEmpresaIdDesdeMascota(mascota_id);
+    const nuevoNumero = await this.generarNumeroHistoriaPorEmpresa(empresa_id);
+
+    return this.historiaClinica.create({
+      data: {
+        mascota_id,
+        empresa_id,
+        hic_estado: 'Abierta',
+        hic_numero_local: nuevoNumero,
+      },
       include: {
         mascota: {
           include: {
             propietario: true,
-          }
+          },
         },
         consultas: {
           orderBy: {
             con_fecha: 'desc',
-          }
-        }
+          },
+        },
       },
     });
-
-    if (!historia) {
-      // Crear historia si no existe
-      return this.historiaClinica.create({
-        data: {
-          mascota_id,
-          empresa_id: await this.obtenerEmpresaIdDesdeMascota(mascota_id),
-          hic_estado: 'Abierta',
-        }
-      });
-    }
-
-    return historia;
   }
+
+  return historia;
+}
 
   //fin obtener amscota histora clinica
   //************************************************************** */
@@ -123,4 +147,15 @@ export class HistoriaClinicaService extends PrismaClient implements OnModuleInit
   remove(id: number) {
     return `This action removes a #${id} historiaClinica`;
   }
+
+  private async generarNumeroHistoriaPorEmpresa(empresa_id: number): Promise<number> {
+    const maxHistoria = await this.historiaClinica.findFirst({
+      where: { empresa_id },
+      orderBy: { hic_numero_local: 'desc' },
+      select: { hic_numero_local: true },
+    });
+
+    return maxHistoria?.hic_numero_local ? maxHistoria.hic_numero_local + 1 : 1;
+  }
+
 }

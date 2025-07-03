@@ -6,7 +6,7 @@ import { UpdateEspecieRazaPatologiaDto } from './dto/update-especie-raza-patolog
 
 @Controller()
 export class EspecieRazaPatologiaController {
-  constructor(private readonly especieRazaPatologiaService: EspecieRazaPatologiaService) {}
+  constructor(private readonly especieRazaPatologiaService: EspecieRazaPatologiaService) { }
 
   @MessagePattern('createEspecieRazaPatologia')
   create(@Payload() createEspecieRazaPatologiaDto: CreateEspecieRazaPatologiaDto) {
@@ -14,9 +14,38 @@ export class EspecieRazaPatologiaController {
   }
 
   @MessagePattern({ cmd: 'findAll_especieRazaPat' })
-  findAll(@Payload() _payload:any) {
+  findAll(@Payload() _payload: any) {
     return this.especieRazaPatologiaService.findAll();
   }
+
+
+
+  @MessagePattern({ cmd: 'findByEspecieRaza' })
+  async findByEspecieRaza(
+    @Payload() payload: { especieId?: number | null; razaId?: number | null }
+  ) {
+    console.log('📥 Payload recibido en MICRO:', payload);
+
+    return await this.especieRazaPatologiaService.getByEspecieRaza(
+      payload.especieId ?? null,
+      payload.razaId ?? null
+    );
+  }
+
+
+
+
+
+  // Cambia el handler temporalmente
+  @MessagePattern({ cmd: 'PRUEBA_MICRO' })
+  handlePrueba(@Payload() data: any) {
+    console.log('🔥 RECIBÍ MENSAJE DE PRUEBA:', data);
+    return { ok: true };
+  }
+
+
+
+
 
   @MessagePattern('findOneEspecieRazaPatologia')
   findOne(@Payload() id: number) {

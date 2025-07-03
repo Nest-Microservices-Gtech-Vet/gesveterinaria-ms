@@ -21,62 +21,78 @@ export class ConsultaService extends PrismaClient implements OnModuleInit {
 
 
   async create(createConsultaDto: CreateConsultaDto, user: { id: number }) {
+    const { patologiasIds = [], ...dto } = createConsultaDto;
 
-    const { valido, motivo } = await this.client
-      .send('empresas.validar-empresa-admin', {
-        empresa_id: createConsultaDto.empresa_id,
-        admin_id: user.id,
-      })
-      .toPromise();
+    // Validación de empresa como ya lo haces
+    const { valido } = await this.client.send('empresas.validar-empresa-admin', {
+      empresa_id: dto.empresa_id,
+      admin_id: user.id,
+    }).toPromise();
 
     if (!valido) {
       throw new ForbiddenException('Empresa no autorizada para este usuario');
     }
-    // Validar que el usuario tiene acceso a la empresa (opcional si ya lo hiciste antes)
 
-    this.logger.debug('Buscando historia clínica con:', {
-      hic_id: createConsultaDto.historiaClinica_id,
-      empresa_id: createConsultaDto.empresa_id,
-    });
+    // Validación de historia clínica
     const historial = await this.historiaClinica.findFirst({
       where: {
-        hic_id: createConsultaDto.historiaClinica_id,
-        empresa_id: createConsultaDto.empresa_id,
+        hic_id: dto.historiaClinica_id,
+        empresa_id: dto.empresa_id,
       },
     });
 
     if (!historial) {
-      this.logger.warn('Historial no encontrado');
       throw new NotFoundException('Historial clínico no encontrado');
     }
 
+
+    const ultimaConsulta = await this.consulta.aggregate({
+      where: { mascota_id: createConsultaDto.mascota_id },
+      _max: { con_numero_mascota: true },
+    });
+
+    const nuevoNumero = (ultimaConsulta._max.con_numero_mascota ?? 0) + 1;
+
+    // Crear consulta
     const consulta = await this.consulta.create({
       data: {
-        con_fecha: new Date(createConsultaDto.con_fecha),
-        con_motivo: createConsultaDto.con_motivo,
-        con_sintomas: createConsultaDto.con_sintomas,
-        con_diagnostico: createConsultaDto.con_diagnostico,
-        con_tratamiento: createConsultaDto.con_tratamiento,
-        con_recomendaciones: createConsultaDto.con_recomendaciones,
-        historiaClinica_id: createConsultaDto.historiaClinica_id,
-        empresa_id: createConsultaDto.empresa_id,
+        ...dto,
+        mascota_id: createConsultaDto.mascota_id,
+        con_fecha: new Date(dto.con_fecha),
+        con_numero_mascota: nuevoNumero,
         createdBy: user.id,
       },
     });
 
+    // Crear relaciones con patologías
+    if (patologiasIds.length > 0) {
+      const relaciones = patologiasIds.map((patologiaId) => ({
+        consulta_id: consulta.con_id,
+        patologia_id: patologiaId,
+        empresa_id: dto.empresa_id,
+        createdBy: user.id,
+      }));
+
+      await this.consultaPatologia.createMany({
+        data: relaciones,
+        skipDuplicates: true, // evita errores si ya existe
+      });
+    }
+
     return consulta;
   }
+
 
 
   findAll() {
     return `This action returns all consulta`;
   }
 
-  async findOneConsulta(con_id: number,userId: number) {
+  async findOneConsulta(con_id: number, userId: number) {
 
-    
+
     const consulta = await this.consulta.findFirst({
-      where:{
+      where: {
         con_id
       }
     });

@@ -58,12 +58,14 @@ model Mascota {
   raza            Raza             @relation(fields: [raza_id], references: [raz_id])
   propietario     Cliente          @relation(fields: [cliente_id], references: [cli_id])
   historiaClinica HistoriaClinica?
+  Consulta        Consulta[]
 }
 
 model HistoriaClinica {
-  hic_id     Int    @id @default(autoincrement())
-  hic_estado String @default("Abierta") @db.VarChar(50)
-  mascota_id Int    @unique
+  hic_id           Int    @id @default(autoincrement())
+  hic_numero_local Int // Número de historia dentro de la empresa
+  hic_estado       String @default("Abierta") @db.VarChar(50)
+  mascota_id       Int    @unique
 
   empresa_id Int
   activo     Boolean  @default(true)
@@ -77,13 +79,25 @@ model HistoriaClinica {
 }
 
 model Consulta {
-  con_id              Int      @id @default(autoincrement())
-  con_fecha           DateTime @default(now())
-  con_motivo          String   @db.VarChar(255)
-  con_sintomas        String?  @db.VarChar(255)
-  con_diagnostico     String?  @db.VarChar(255)
-  con_tratamiento     String?  @db.VarChar(255)
-  con_recomendaciones String?  @db.VarChar(255)
+  con_id                     Int      @id @default(autoincrement())
+  con_numero_mascota         Int? // Número secuencial por mascota
+  con_fecha                  DateTime @default(now())
+  mascota_id                 Int?
+  mascota                    Mascota?  @relation(fields: [mascota_id], references: [mas_id])
+  con_motivo                 String   @db.VarChar(255)
+  con_peso                   Float?
+  con_temperaturaCorporal    Float?
+  con_icc                    String?
+  con_pulso                  Int?
+  con_frecuenciaRespiratoria Int? //respiraciones por minutos F.R.
+  con_frecuenciaCardiaca     Int? //latidos por minutoF.C.
+  con_hidratacion            String?  @db.VarChar(255)
+  con_mucosas                String?  @db.VarChar(255)
+  con_campoPulmonar          String?  @db.VarChar(255)
+  con_palpacionAbdominal     String?  @db.VarChar(255)
+  con_diagnosticoPresuntivo  String?  @db.VarChar(255)
+  con_observaciones          String?  @db.VarChar(255)
+  con_recomendaciones        String?  @db.VarChar(255)
 
   historiaClinica_id Int
   empresa_id         Int
@@ -93,9 +107,9 @@ model Consulta {
   created_at         DateTime @default(now())
   updated_at         DateTime @updatedAt
 
-  historiaClinica   HistoriaClinica     @relation(fields: [historiaClinica_id], references: [hic_id])
-  vacunas           Vacuna[]
-  ConsultasPatologia ConsultaPatologia[]
+  historiaClinica    HistoriaClinica     @relation(fields: [historiaClinica_id], references: [hic_id])
+  vacunas            Vacuna[]
+  ConsultasPatologia ConsultaPatologia[] // 👈 Diagnóstico real
 }
 
 model Vacuna {
@@ -166,9 +180,9 @@ model Patologia {
 }
 
 model EspecieRazaPatologia {
-  erp_id       Int  @id @default(autoincrement())
-  especie_id   Int?
-  raza_id      Int?
+  erp_id       Int @id @default(autoincrement())
+  especie_id   Int
+  raza_id      Int
   patologia_id Int
 
   empresa_id Int
@@ -178,8 +192,8 @@ model EspecieRazaPatologia {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  especie   Especie?  @relation(fields: [especie_id], references: [esp_id])
-  raza      Raza?     @relation(fields: [raza_id], references: [raz_id])
+  especie   Especie   @relation(fields: [especie_id], references: [esp_id])
+  raza      Raza      @relation(fields: [raza_id], references: [raz_id])
   patologia Patologia @relation(fields: [patologia_id], references: [pat_id])
 }
 

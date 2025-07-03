@@ -10,6 +10,8 @@ export class CreateHistoriaClinicaDto {
     @IsOptional()
     @IsString()
     hic_estado?: string;
+
+    
     
     @IsOptional()
     @IsInt()

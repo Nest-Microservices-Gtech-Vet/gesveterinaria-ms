@@ -1,4 +1,24 @@
 -- CreateTable
+CREATE TABLE "Cliente" (
+    "cli_id" SERIAL NOT NULL,
+    "cli_identificacion" VARCHAR(255) NOT NULL,
+    "cli_nombre" VARCHAR(255) NOT NULL,
+    "cli_apellido" VARCHAR(255) NOT NULL,
+    "cli_email" VARCHAR(255) NOT NULL,
+    "cli_celular" VARCHAR(13) NOT NULL,
+    "cli_direccion" VARCHAR(255) NOT NULL,
+    "cli_observaciones" VARCHAR(255) NOT NULL,
+    "empresa_id" INTEGER NOT NULL,
+    "activo" BOOLEAN NOT NULL DEFAULT true,
+    "createdBy" INTEGER,
+    "updatedBy" INTEGER,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Cliente_pkey" PRIMARY KEY ("cli_id")
+);
+
+-- CreateTable
 CREATE TABLE "Mascota" (
     "mas_id" SERIAL NOT NULL,
     "mas_nombre" VARCHAR(255) NOT NULL,
@@ -25,6 +45,7 @@ CREATE TABLE "Mascota" (
 -- CreateTable
 CREATE TABLE "HistoriaClinica" (
     "hic_id" SERIAL NOT NULL,
+    "hic_numero_local" INTEGER NOT NULL,
     "hic_estado" VARCHAR(50) NOT NULL DEFAULT 'Abierta',
     "mascota_id" INTEGER NOT NULL,
     "empresa_id" INTEGER NOT NULL,
@@ -40,11 +61,22 @@ CREATE TABLE "HistoriaClinica" (
 -- CreateTable
 CREATE TABLE "Consulta" (
     "con_id" SERIAL NOT NULL,
+    "con_numero_mascota" INTEGER NOT NULL,
     "con_fecha" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "mascota_id" INTEGER NOT NULL,
     "con_motivo" VARCHAR(255) NOT NULL,
-    "con_sintomas" VARCHAR(255),
-    "con_diagnostico" VARCHAR(255),
-    "con_tratamiento" VARCHAR(255),
+    "con_peso" DOUBLE PRECISION,
+    "con_temperaturaCorporal" DOUBLE PRECISION,
+    "con_icc" TEXT,
+    "con_pulso" INTEGER,
+    "con_frecuenciaRespiratoria" INTEGER,
+    "con_frecuenciaCardiaca" INTEGER,
+    "con_hidratacion" VARCHAR(255),
+    "con_mucosas" VARCHAR(255),
+    "con_campoPulmonar" VARCHAR(255),
+    "con_palpacionAbdominal" VARCHAR(255),
+    "con_diagnosticoPresuntivo" VARCHAR(255),
+    "con_observaciones" VARCHAR(255),
     "con_recomendaciones" VARCHAR(255),
     "historiaClinica_id" INTEGER NOT NULL,
     "empresa_id" INTEGER NOT NULL,
@@ -122,8 +154,8 @@ CREATE TABLE "Patologia" (
 -- CreateTable
 CREATE TABLE "EspecieRazaPatologia" (
     "erp_id" SERIAL NOT NULL,
-    "especie_id" INTEGER,
-    "raza_id" INTEGER,
+    "especie_id" INTEGER NOT NULL,
+    "raza_id" INTEGER NOT NULL,
     "patologia_id" INTEGER NOT NULL,
     "empresa_id" INTEGER NOT NULL,
     "activo" BOOLEAN NOT NULL DEFAULT true,
@@ -134,6 +166,27 @@ CREATE TABLE "EspecieRazaPatologia" (
 
     CONSTRAINT "EspecieRazaPatologia_pkey" PRIMARY KEY ("erp_id")
 );
+
+-- CreateTable
+CREATE TABLE "ConsultaPatologia" (
+    "cp_id" SERIAL NOT NULL,
+    "consulta_id" INTEGER NOT NULL,
+    "patologia_id" INTEGER NOT NULL,
+    "empresa_id" INTEGER NOT NULL,
+    "activo" BOOLEAN NOT NULL DEFAULT true,
+    "createdBy" INTEGER,
+    "updatedBy" INTEGER,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ConsultaPatologia_pkey" PRIMARY KEY ("cp_id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Cliente_cli_identificacion_key" ON "Cliente"("cli_identificacion");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Cliente_cli_email_key" ON "Cliente"("cli_email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Mascota_mas_microchip_key" ON "Mascota"("mas_microchip");
@@ -166,10 +219,16 @@ ALTER TABLE "Vacuna" ADD CONSTRAINT "Vacuna_consulta_id_fkey" FOREIGN KEY ("cons
 ALTER TABLE "Raza" ADD CONSTRAINT "Raza_especie_id_fkey" FOREIGN KEY ("especie_id") REFERENCES "Especie"("esp_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "EspecieRazaPatologia" ADD CONSTRAINT "EspecieRazaPatologia_especie_id_fkey" FOREIGN KEY ("especie_id") REFERENCES "Especie"("esp_id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "EspecieRazaPatologia" ADD CONSTRAINT "EspecieRazaPatologia_especie_id_fkey" FOREIGN KEY ("especie_id") REFERENCES "Especie"("esp_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "EspecieRazaPatologia" ADD CONSTRAINT "EspecieRazaPatologia_raza_id_fkey" FOREIGN KEY ("raza_id") REFERENCES "Raza"("raz_id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "EspecieRazaPatologia" ADD CONSTRAINT "EspecieRazaPatologia_raza_id_fkey" FOREIGN KEY ("raza_id") REFERENCES "Raza"("raz_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "EspecieRazaPatologia" ADD CONSTRAINT "EspecieRazaPatologia_patologia_id_fkey" FOREIGN KEY ("patologia_id") REFERENCES "Patologia"("pat_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ConsultaPatologia" ADD CONSTRAINT "ConsultaPatologia_consulta_id_fkey" FOREIGN KEY ("consulta_id") REFERENCES "Consulta"("con_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ConsultaPatologia" ADD CONSTRAINT "ConsultaPatologia_patologia_id_fkey" FOREIGN KEY ("patologia_id") REFERENCES "Patologia"("pat_id") ON DELETE RESTRICT ON UPDATE CASCADE;
