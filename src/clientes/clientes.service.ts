@@ -64,7 +64,7 @@ export class ClientesService extends PrismaClient implements OnModuleInit {
   //************************************************************************************** */
   //inicia obtener clientes
 
-  async findAll(adminId: number) {
+  async findAll(adminId: number, empresaId: number) {
     try {
       const empresas = await this.client.send('empresas.obtener-empresas-por-admin', { admin_id: adminId }).toPromise();
 
@@ -76,7 +76,7 @@ export class ClientesService extends PrismaClient implements OnModuleInit {
 
       const clientes = await this.cliente.findMany({
         where: {
-          empresa_id: { in: empresasIds },activo:true
+          empresa_id: empresaId,activo:true
         },
         orderBy: {
           created_at: 'desc',

@@ -48,6 +48,7 @@ model Mascota {
   cliente_id Int
   empresa_id Int
 
+
   activo     Boolean  @default(true)
   createdBy  Int?
   updatedBy  Int?

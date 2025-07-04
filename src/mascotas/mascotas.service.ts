@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, HttpStatus, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, HttpStatus, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException, OnModuleInit, UnauthorizedException } from '@nestjs/common';
 import { CreateMascotaDto } from './dto/create-mascota.dto';
 import { UpdateMascotaDto } from './dto/update-mascota.dto';
 import { NATS_SERVICE } from 'src/config';
@@ -70,41 +70,32 @@ export class MascotasService extends PrismaClient implements OnModuleInit {
     }
   }
 
-  async findAll(adminId: number) {
-    try {
-      // 1. Obtener las empresas del admin
-      const empresas = await this.client.send('empresas.obtener-empresas-por-admin', {
-        admin_id: adminId,
-      }).toPromise();
+  async findAll(adminId: number, empresaId: number) {
+  // 1. Obtener empresas asociadas al admin
+  const empresas = await this.client.send('empresas.obtener-empresas-por-admin', { admin_id: adminId }).toPromise();
 
-      if (!empresas || empresas.length === 0) {
-        return [];
-      }
+  if (!empresas || empresas.length === 0) return [];
 
-      const empresasIds = empresas.map((e) => e.emp_id);
+  const empresaIds = empresas.map(e => e.emp_id);
 
-      // 2. Buscar mascotas asociadas a esas empresas
-      const mascotas = await this.mascota.findMany({
-        where: {
-          empresa_id: { in: empresasIds },
-          activo: true,
-        },
-        orderBy: {
-          created_at: 'desc',
-        },
-        include: {
-          propietario: true,
-          // asegúrate de que esta relación esté definida en tu modelo Prisma
-        },
-      });
-
-      return mascotas;
-
-    } catch (error) {
-      this.logger.error('Error al listar mascotas por admin', error.stack || error.message);
-      throw new InternalServerErrorException('No se pudo obtener la lista de mascotas');
-    }
+  // 2. Validar que la empresa actual está dentro de las que el admin puede ver
+  if (!empresaIds.includes(empresaId)) {
+    throw new UnauthorizedException('No tiene acceso a esta empresa');
   }
+
+  // 3. Buscar mascotas solo de la empresa actual
+  return this.mascota.findMany({
+    where: {
+      empresa_id: empresaId,
+      activo: true,
+    },
+    orderBy: { created_at: 'desc' },
+    include: { propietario: true }
+  });
+}
+
+
+
 
 
   async findOne(mas_id: number, userId: number) {

@@ -24,9 +24,9 @@ export class ClientesController {
 
   //inicia obtener clientes
   @MessagePattern({ cmd: 'findAll_clientes' })
-  findAll(@Payload() payload: { adminId: number }) {
-    const { adminId } = payload;
-    return this.clientesService.findAll(adminId);
+  findAll(@Payload() payload: { adminId: number, empresaId: number }) {
+    const { adminId ,empresaId} = payload;
+    return this.clientesService.findAll(adminId,empresaId);
   }
   //fin obtener clientes
   //************************************************************************************** */

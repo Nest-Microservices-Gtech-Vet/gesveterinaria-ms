@@ -18,10 +18,11 @@ export class MascotasController {
   }
 
   @MessagePattern({ cmd: 'findAll_mascotas' })
-  findAll(@Payload() payload: { adminId: number }) {
-    const { adminId } = payload;
-    return this.mascotasService.findAll(adminId);
+  findAll(@Payload() payload: { adminId: number, empresaId: number }) {
+    const { adminId, empresaId } = payload;
+    return this.mascotasService.findAll(adminId, empresaId);
   }
+
 
   @MessagePattern({ cmd: 'mascotaById' })
   findOne(@Payload() payload: { id: number, user: { id: number } }) {
@@ -48,8 +49,8 @@ export class MascotasController {
     user: { id: number };
     updatedBy: number;
   }) {
-    const { mas_id,user,updatedBy} = payload
+    const { mas_id, user, updatedBy } = payload
     console.log(`El propietario ${payload} a sido eliminado`)
-    return this.mascotasService.remove(mas_id,user.id,updatedBy)
+    return this.mascotasService.remove(mas_id, user.id, updatedBy)
   }
 }
