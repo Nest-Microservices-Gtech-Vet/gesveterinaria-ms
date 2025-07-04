@@ -4,12 +4,23 @@ export class CreateVacunaDto {
     @IsString()
     vac_nombre: string;
 
+    @IsString()
+    vac_tipo: string;
+
     @IsDateString()
     vac_fecha: string;
 
     @IsOptional()
     @IsDateString()
     vac_proxima?: string;
+
+    @IsOptional()
+    @IsString()
+    vac_lote?: string;
+
+    @IsOptional()
+    @IsString()
+    vac_foto?: string;
 
     @IsOptional()
     @IsString()
@@ -20,4 +31,19 @@ export class CreateVacunaDto {
 
     @IsInt()
     empresa_id: number;
+
+    @IsInt()
+    numeroConsulta: number;
+
+    @IsInt()
+    mascota_id: number;
+
+    @IsOptional()
+    @IsInt()
+    createdBy?: number;
+
+
+    @IsOptional()
+    @IsInt()
+    updatedBy?: number;
 }

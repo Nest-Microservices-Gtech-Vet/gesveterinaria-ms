@@ -116,9 +116,13 @@ model Consulta {
 model Vacuna {
   vac_id          Int       @id @default(autoincrement())
   vac_nombre      String    @db.VarChar(255)
+  vac_tipo        String    @db.VarChar(100)
   vac_fecha       DateTime
   vac_proxima     DateTime?
+  vac_lote        String?   @db.VarChar(100)
+  vac_foto        String?   @db.VarChar(255) // URL o nombre de archivo
   vac_observacion String?   @db.VarChar(255)
+
 
   consulta_id Int
   empresa_id  Int

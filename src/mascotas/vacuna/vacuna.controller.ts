@@ -6,11 +6,15 @@ import { UpdateVacunaDto } from './dto/update-vacuna.dto';
 
 @Controller()
 export class VacunaController {
-  constructor(private readonly vacunaService: VacunaService) {}
+  constructor(private readonly vacunaService: VacunaService) { }
 
-  @MessagePattern('createVacuna')
-  create(@Payload() createVacunaDto: CreateVacunaDto) {
-    return this.vacunaService.create(createVacunaDto);
+  @MessagePattern({ cmd: 'crear_vacuna' })
+  create(@Payload() payload: { createVacunaDto: CreateVacunaDto; user: { id: number } }) {
+    const { createVacunaDto, user } = payload
+    return this.vacunaService.createVacuna({
+      ...createVacunaDto,
+      createdBy: user.id
+    }, user);
   }
 
   @MessagePattern('findAllVacuna')
