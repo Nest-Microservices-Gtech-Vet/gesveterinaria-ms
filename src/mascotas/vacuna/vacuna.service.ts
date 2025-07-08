@@ -47,12 +47,12 @@ export class VacunaService extends PrismaClient implements OnModuleInit {
       }
 
       const consulta = await this.consulta.findFirst({
-  where: {
-    empresa_id: Number(createVacunaDto.empresa_id),
-    mascota_id: Number(createVacunaDto.mascota_id),
-    con_numero_mascota: Number(createVacunaDto.numeroConsulta),
-  },
-});
+        where: {
+          empresa_id: Number(createVacunaDto.empresa_id),
+          mascota_id: Number(createVacunaDto.mascota_id),
+          con_numero_mascota: Number(createVacunaDto.numeroConsulta),
+        },
+      });
 
 
       if (!consulta) {
@@ -122,5 +122,20 @@ export class VacunaService extends PrismaClient implements OnModuleInit {
       this.logger.error('Error guardando fotos vacuna', error.stack || error.message);
       throw new InternalServerErrorException('Error guardando fotos de la vacuna');
     }
+  }
+
+  async findByConsulta(consultaId: number) {
+    return this.vacuna.findMany({
+      where: {
+        consulta_id: consultaId,
+        activo: true,
+      },
+      include: {
+        VacunaFoto: true,
+      },
+      orderBy: {
+        vac_fecha: 'desc',
+      },
+    });
   }
 }

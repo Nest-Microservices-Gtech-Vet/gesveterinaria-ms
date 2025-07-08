@@ -21,6 +21,11 @@ export class VacunaController {
     return this.vacunaService.createVacuna(createVacunaDto, user, fotos);
   }
 
+   @MessagePattern({ cmd: 'vacunasPorConsulta' })
+  async getVacunasPorConsulta(@Payload() data: { consultaId: number }) {
+    return this.vacunaService.findByConsulta(data.consultaId);
+  }
+
 
   // @MessagePattern({ cmd: 'vacuna.subir-fotos' })
   // async subirFotos(@Payload() data: { vacId: number; fotos: { url: string; descripcion?: string }[] }) {

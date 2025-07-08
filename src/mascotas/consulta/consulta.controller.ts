@@ -34,12 +34,7 @@ export class ConsultaController {
   }
 
 
-  // @MessagePattern({ cmd: 'consulta.activa' })
-  // async handleConsultaActiva(
-  //   @Payload() payload: { empresaId: number; mascotaId: number; user?: { id: number } },
-  // ) {
-  //   return await this.consultaService.obtenerConsultaActiva(payload.empresaId, payload.mascotaId);
-  // }
+
   @MessagePattern({ cmd: 'consulta.activa' })
   async handleConsultaActiva(
     @Payload() payload: { empresaId?: number | null; mascotaId?: number | null },

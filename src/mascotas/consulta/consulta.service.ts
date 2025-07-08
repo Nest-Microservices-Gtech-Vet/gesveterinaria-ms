@@ -94,7 +94,15 @@ export class ConsultaService extends PrismaClient implements OnModuleInit {
     const consulta = await this.consulta.findFirst({
       where: {
         con_id
-      }
+      },
+      include: {
+        mascota: {
+          include: {
+            propietario: true,
+          },
+        },
+        historiaClinica: true,
+      },
     });
     if (!consulta) {
       throw new RpcException({
