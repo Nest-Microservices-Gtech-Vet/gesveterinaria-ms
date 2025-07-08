@@ -1,4 +1,4 @@
-import { Controller } from '@nestjs/common';
+import { Controller, NotFoundException } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { VacunaService } from './vacuna.service';
 import { CreateVacunaDto } from './dto/create-vacuna.dto';
@@ -8,32 +8,27 @@ import { UpdateVacunaDto } from './dto/update-vacuna.dto';
 export class VacunaController {
   constructor(private readonly vacunaService: VacunaService) { }
 
-  @MessagePattern({ cmd: 'crear_vacuna' })
-  create(@Payload() payload: { createVacunaDto: CreateVacunaDto; user: { id: number } }) {
-    const { createVacunaDto, user } = payload
-    return this.vacunaService.createVacuna({
-      ...createVacunaDto,
-      createdBy: user.id
-    }, user);
+  @MessagePattern({ cmd: 'vacunas.crear-con-fotos' })
+  async create(
+    @Payload()
+    payload: {
+      createVacunaDto: CreateVacunaDto;
+      user: { id: number };
+      fotos?: { url: string; descripcion?: string }[];
+    }
+  ) {
+    const { createVacunaDto, user, fotos } = payload;
+    return this.vacunaService.createVacuna(createVacunaDto, user, fotos);
   }
 
-  @MessagePattern('findAllVacuna')
-  findAll() {
-    return this.vacunaService.findAll();
-  }
 
-  @MessagePattern('findOneVacuna')
-  findOne(@Payload() id: number) {
-    return this.vacunaService.findOne(id);
-  }
+  // @MessagePattern({ cmd: 'vacuna.subir-fotos' })
+  // async subirFotos(@Payload() data: { vacId: number; fotos: { url: string; descripcion?: string }[] }) {
+  //   const { vacId, fotos } = data;
+  //   if (!vacId) throw new NotFoundException('ID de vacuna no proporcionado');
+  //   return this.vacunaService.guardarFotosVacuna(vacId, fotos);
+  // }
 
-  @MessagePattern('updateVacuna')
-  update(@Payload() updateVacunaDto: UpdateVacunaDto) {
-    return this.vacunaService.update(updateVacunaDto.id, updateVacunaDto);
-  }
 
-  @MessagePattern('removeVacuna')
-  remove(@Payload() id: number) {
-    return this.vacunaService.remove(id);
-  }
+
 }

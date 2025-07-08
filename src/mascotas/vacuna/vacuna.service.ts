@@ -1,28 +1,41 @@
-import { ForbiddenException, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { CreateVacunaDto } from './dto/create-vacuna.dto';
 import { UpdateVacunaDto } from './dto/update-vacuna.dto';
 import { NATS_SERVICE } from 'src/config';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaClient } from '@prisma/client';
-import { date } from 'joi';
 
 @Injectable()
 export class VacunaService extends PrismaClient implements OnModuleInit {
   private readonly logger = new Logger('GestVeterinaria-Service-Vacunas');
+
   constructor(
     @Inject(NATS_SERVICE) private readonly client: ClientProxy,
   ) {
     super();
   }
+
   onModuleInit() {
-    this.$connect
-    this.logger.log('gesVeterinania Mascotas conectado')
+    this.$connect();
+    this.logger.log('gesVeterinaria Mascotas conectado');
   }
 
-
-  async createVacuna(createVacunaDto: CreateVacunaDto, user: { id: number }) {
+  // ✅ Crear vacuna
+  async createVacuna(
+    createVacunaDto: CreateVacunaDto,
+    user: { id: number },
+    fotos?: { url: string; descripcion?: string }[]
+  ) {
     try {
-      const { valido, motivo } = await this.client
+      const { valido } = await this.client
         .send('empresas.validar-empresa-admin', {
           empresa_id: createVacunaDto.empresa_id,
           admin_id: user.id,
@@ -30,58 +43,84 @@ export class VacunaService extends PrismaClient implements OnModuleInit {
         .toPromise();
 
       if (!valido) {
-        this.logger.warn(`Empresa no válida para el admin: ${motivo}`);
         throw new ForbiddenException('Empresa no autorizada para este usuario.');
       }
 
       const consulta = await this.consulta.findFirst({
-        where: {
-          empresa_id: createVacunaDto.empresa_id,
-          mascota_id: createVacunaDto.mascota_id,
-          con_numero_mascota: createVacunaDto.numeroConsulta,
-        },
-      });
+  where: {
+    empresa_id: Number(createVacunaDto.empresa_id),
+    mascota_id: Number(createVacunaDto.mascota_id),
+    con_numero_mascota: Number(createVacunaDto.numeroConsulta),
+  },
+});
+
 
       if (!consulta) {
-        throw new NotFoundException('No se encontró la consulta para esta mascota');
+        throw new NotFoundException('Consulta no encontrada.');
       }
 
-      const vacunaCrear = await this.vacuna.create({
+      const vacuna = await this.vacuna.create({
         data: {
           vac_nombre: createVacunaDto.vac_nombre,
           vac_tipo: createVacunaDto.vac_tipo,
           vac_fecha: new Date(createVacunaDto.vac_fecha),
-          vac_proxima: createVacunaDto.vac_proxima ? new Date(createVacunaDto.vac_proxima) : null,
+          vac_proxima: createVacunaDto.vac_proxima
+            ? new Date(createVacunaDto.vac_proxima)
+            : null,
           vac_lote: createVacunaDto.vac_lote,
-          vac_foto: createVacunaDto.vac_foto,
           vac_observacion: createVacunaDto.vac_observacion,
-          empresa_id: createVacunaDto.empresa_id,
+          empresa_id: Number(createVacunaDto.empresa_id),
           consulta_id: consulta.con_id,
-          createdBy: user.id
-
-
-        }
+          createdBy: user.id,
+        },
       });
-      return vacunaCrear;
+
+      // Guardar fotos (si las hay)
+      if (fotos && fotos.length > 0) {
+        await this.vacunaFoto.createMany({
+          data: fotos.map(foto => ({
+            vac_id: vacuna.vac_id,
+            url: foto.url,
+            descripcion: foto.descripcion || null,
+          })),
+        });
+      }
+
+      return vacuna;
     } catch (error) {
-      this.logger.error('Error en registro de vacuna ', error.stack || error.message);
-      throw new InternalServerErrorException('No se pudo registro de vacuna ');
+      this.logger.error('Error en registro de vacuna', error);
+      throw new InternalServerErrorException('No se pudo registrar la vacuna');
     }
   }
 
-  findAll() {
-    return `This action returns all vacuna`;
-  }
 
-  findOne(id: number) {
-    return `This action returns a #${id} vacuna`;
-  }
+  // ✅ Guardar múltiples fotos asociadas a una vacuna
+  async guardarFotosVacuna(vacId: number, fotos: { url: string; descripcion?: string }[]) {
+    try {
+      if (!vacId) {
+        throw new NotFoundException('ID de vacuna no proporcionado');
+      }
 
-  update(id: number, updateVacunaDto: UpdateVacunaDto) {
-    return `This action updates a #${id} vacuna`;
-  }
+      const vacuna = await this.vacuna.findUnique({ where: { vac_id: vacId } });
+      if (!vacuna) throw new NotFoundException('Vacuna no encontrada');
 
-  remove(id: number) {
-    return `This action removes a #${id} vacuna`;
+      const fotosParaCrear = fotos.map(foto => ({
+        vac_id: vacId,
+        url: foto.url,
+        descripcion: foto.descripcion,
+      }));
+
+      await this.vacunaFoto.createMany({
+        data: fotosParaCrear,
+      });
+
+      return {
+        status: 'ok',
+        message: 'Fotos guardadas correctamente',
+      };
+    } catch (error) {
+      this.logger.error('Error guardando fotos vacuna', error.stack || error.message);
+      throw new InternalServerErrorException('Error guardando fotos de la vacuna');
+    }
   }
 }

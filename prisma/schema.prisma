@@ -48,7 +48,6 @@ model Mascota {
   cliente_id Int
   empresa_id Int
 
-
   activo     Boolean  @default(true)
   createdBy  Int?
   updatedBy  Int?
@@ -84,7 +83,7 @@ model Consulta {
   con_numero_mascota         Int? // Número secuencial por mascota
   con_fecha                  DateTime @default(now())
   mascota_id                 Int?
-  mascota                    Mascota?  @relation(fields: [mascota_id], references: [mas_id])
+  mascota                    Mascota? @relation(fields: [mascota_id], references: [mas_id])
   con_motivo                 String   @db.VarChar(255)
   con_peso                   Float?
   con_temperaturaCorporal    Float?
@@ -123,7 +122,6 @@ model Vacuna {
   vac_foto        String?   @db.VarChar(255) // URL o nombre de archivo
   vac_observacion String?   @db.VarChar(255)
 
-
   consulta_id Int
   empresa_id  Int
   activo      Boolean  @default(true)
@@ -132,7 +130,8 @@ model Vacuna {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
-  consulta Consulta @relation(fields: [consulta_id], references: [con_id])
+  consulta   Consulta     @relation(fields: [consulta_id], references: [con_id])
+  VacunaFoto VacunaFoto[]
 }
 
 model Especie {
@@ -216,4 +215,18 @@ model ConsultaPatologia {
 
   consulta  Consulta  @relation(fields: [consulta_id], references: [con_id])
   patologia Patologia @relation(fields: [patologia_id], references: [pat_id])
+}
+
+model VacunaFoto {
+  vf_id       Int     @id @default(autoincrement())
+  vac_id      Int
+  url         String  @db.VarChar(255) // puede ser nombre de archivo o ruta
+  descripcion String? @db.VarChar(255)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  vacuna Vacuna @relation(fields: [vac_id], references: [vac_id])
+
+  @@map("vacuna_foto")
 }
