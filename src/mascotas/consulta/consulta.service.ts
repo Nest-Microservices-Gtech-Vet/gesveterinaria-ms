@@ -144,7 +144,54 @@ export class ConsultaService extends PrismaClient implements OnModuleInit {
     }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} consulta`;
+
+
+  // async obtenerConsultaActiva(empresaId: number, mascotaId: number) {
+  //   const consulta = await this.consulta.findFirst({
+  //     where: {
+  //       empresa_id: empresaId,
+  //       mascota_id: mascotaId,
+  //       activo: true,
+  //     },
+  //     orderBy: {
+  //       created_at: 'desc',
+  //     },
+  //   });
+
+  //   if (!consulta) {
+  //     throw new NotFoundException('No se encontró una consulta activa');
+  //   }
+
+  //   return consulta;
+  // }
+
+  async obtenerConsultaActiva(empresaId: number | null, mascotaId: number | null) {
+    const where: any = {
+      activo: true,
+    };
+
+    if (empresaId !== null && empresaId !== undefined) {
+      where.empresa_id = empresaId;
+    }
+
+    if (mascotaId !== null && mascotaId !== undefined) {
+      where.mascota_id = mascotaId;
+    }
+
+    const consulta = await this.consulta.findFirst({
+      where,
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
+
+    if (!consulta) {
+      throw new NotFoundException('No se encontró una consulta activa');
+    }
+
+    return consulta;
   }
+
+
+
 }
