@@ -110,6 +110,7 @@ model Consulta {
   historiaClinica    HistoriaClinica     @relation(fields: [historiaClinica_id], references: [hic_id])
   vacunas            Vacuna[]
   ConsultasPatologia ConsultaPatologia[] // 👈 Diagnóstico real
+  Tratamiento        Tratamiento[]
 }
 
 model Vacuna {
@@ -229,4 +230,36 @@ model VacunaFoto {
   vacuna Vacuna @relation(fields: [vac_id], references: [vac_id])
 
   @@map("vacuna_foto")
+}
+
+model Tratamiento {
+  tra_id      Int      @id @default(autoincrement())
+  consulta_id Int // FK a la consulta
+  mascota_id  Int // útil para trazabilidad
+  empresa_id  Int
+  activo      Boolean  @default(true)
+  createdBy   Int?
+  updatedBy   Int?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  consulta     Consulta      @relation(fields: [consulta_id], references: [con_id])
+  medicamentos Medicamento[]
+}
+
+model Medicamento {
+  med_id Int    @id @default(autoincrement())
+  tratamiento_id Int // FK a tratamiento
+  med_nombre String @db.VarChar(255)
+  med_dosis  String @db.VarChar(255)
+
+  empresa_id  Int
+
+  createdBy   Int?
+  updatedBy   Int?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  tratamiento Tratamiento @relation(fields: [tratamiento_id], references: [tra_id])
 }

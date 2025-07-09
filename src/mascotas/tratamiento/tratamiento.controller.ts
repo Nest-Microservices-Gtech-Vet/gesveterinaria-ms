@@ -8,9 +8,9 @@ import { UpdateTratamientoDto } from './dto/update-tratamiento.dto';
 export class TratamientoController {
   constructor(private readonly tratamientoService: TratamientoService) {}
 
-  @MessagePattern('createTratamiento')
-  create(@Payload() createTratamientoDto: CreateTratamientoDto) {
-    return this.tratamientoService.create(createTratamientoDto);
+  @MessagePattern({ cmd: 'crear_tratamiento' })
+  create(@Payload() payload:{createTratamientoDto: CreateTratamientoDto,user: { id: number } }) {
+    return this.tratamientoService.createTratamiento(payload.createTratamientoDto,payload.user);
   }
 
   @MessagePattern('findAllTratamiento')

@@ -11,8 +11,6 @@ import { EspecieRazaPatologiaModule } from './especie-raza-patologia/especie-raz
 import { NatsModule } from 'src/transports/nats.module';
 import { TratamientoModule } from './tratamiento/tratamiento.module';
 import { MedicamentoModule } from './medicamento/medicamento.module';
-import { TratamientoModule } from './tratamiento/tratamiento.module';
-import { MedicamentoModule } from './medicamento/medicamento.module';
 
 @Module({
   controllers: [MascotasController],

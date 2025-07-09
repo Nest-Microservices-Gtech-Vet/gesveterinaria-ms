@@ -61,9 +61,9 @@ CREATE TABLE "HistoriaClinica" (
 -- CreateTable
 CREATE TABLE "Consulta" (
     "con_id" SERIAL NOT NULL,
-    "con_numero_mascota" INTEGER NOT NULL,
+    "con_numero_mascota" INTEGER,
     "con_fecha" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "mascota_id" INTEGER NOT NULL,
+    "mascota_id" INTEGER,
     "con_motivo" VARCHAR(255) NOT NULL,
     "con_peso" DOUBLE PRECISION,
     "con_temperaturaCorporal" DOUBLE PRECISION,
@@ -93,8 +93,11 @@ CREATE TABLE "Consulta" (
 CREATE TABLE "Vacuna" (
     "vac_id" SERIAL NOT NULL,
     "vac_nombre" VARCHAR(255) NOT NULL,
+    "vac_tipo" VARCHAR(100) NOT NULL,
     "vac_fecha" TIMESTAMP(3) NOT NULL,
     "vac_proxima" TIMESTAMP(3),
+    "vac_lote" VARCHAR(100),
+    "vac_foto" VARCHAR(255),
     "vac_observacion" VARCHAR(255),
     "consulta_id" INTEGER NOT NULL,
     "empresa_id" INTEGER NOT NULL,
@@ -182,6 +185,48 @@ CREATE TABLE "ConsultaPatologia" (
     CONSTRAINT "ConsultaPatologia_pkey" PRIMARY KEY ("cp_id")
 );
 
+-- CreateTable
+CREATE TABLE "vacuna_foto" (
+    "vf_id" SERIAL NOT NULL,
+    "vac_id" INTEGER NOT NULL,
+    "url" VARCHAR(255) NOT NULL,
+    "descripcion" VARCHAR(255),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "vacuna_foto_pkey" PRIMARY KEY ("vf_id")
+);
+
+-- CreateTable
+CREATE TABLE "Tratamiento" (
+    "tra_id" SERIAL NOT NULL,
+    "consulta_id" INTEGER NOT NULL,
+    "mascota_id" INTEGER NOT NULL,
+    "empresa_id" INTEGER NOT NULL,
+    "activo" BOOLEAN NOT NULL DEFAULT true,
+    "createdBy" INTEGER,
+    "updatedBy" INTEGER,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Tratamiento_pkey" PRIMARY KEY ("tra_id")
+);
+
+-- CreateTable
+CREATE TABLE "Medicamento" (
+    "med_id" SERIAL NOT NULL,
+    "tratamiento_id" INTEGER NOT NULL,
+    "med_nombre" VARCHAR(255) NOT NULL,
+    "med_dosis" VARCHAR(255) NOT NULL,
+    "empresa_id" INTEGER NOT NULL,
+    "createdBy" INTEGER,
+    "updatedBy" INTEGER,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Medicamento_pkey" PRIMARY KEY ("med_id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Cliente_cli_identificacion_key" ON "Cliente"("cli_identificacion");
 
@@ -210,6 +255,9 @@ ALTER TABLE "Mascota" ADD CONSTRAINT "Mascota_cliente_id_fkey" FOREIGN KEY ("cli
 ALTER TABLE "HistoriaClinica" ADD CONSTRAINT "HistoriaClinica_mascota_id_fkey" FOREIGN KEY ("mascota_id") REFERENCES "Mascota"("mas_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Consulta" ADD CONSTRAINT "Consulta_mascota_id_fkey" FOREIGN KEY ("mascota_id") REFERENCES "Mascota"("mas_id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Consulta" ADD CONSTRAINT "Consulta_historiaClinica_id_fkey" FOREIGN KEY ("historiaClinica_id") REFERENCES "HistoriaClinica"("hic_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -232,3 +280,12 @@ ALTER TABLE "ConsultaPatologia" ADD CONSTRAINT "ConsultaPatologia_consulta_id_fk
 
 -- AddForeignKey
 ALTER TABLE "ConsultaPatologia" ADD CONSTRAINT "ConsultaPatologia_patologia_id_fkey" FOREIGN KEY ("patologia_id") REFERENCES "Patologia"("pat_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "vacuna_foto" ADD CONSTRAINT "vacuna_foto_vac_id_fkey" FOREIGN KEY ("vac_id") REFERENCES "Vacuna"("vac_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Tratamiento" ADD CONSTRAINT "Tratamiento_consulta_id_fkey" FOREIGN KEY ("consulta_id") REFERENCES "Consulta"("con_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Medicamento" ADD CONSTRAINT "Medicamento_tratamiento_id_fkey" FOREIGN KEY ("tratamiento_id") REFERENCES "Tratamiento"("tra_id") ON DELETE RESTRICT ON UPDATE CASCADE;

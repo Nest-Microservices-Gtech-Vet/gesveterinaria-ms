@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { envs } from './config';
+import { join } from 'path';
 
 async function bootstrap() {
   const logger = new Logger('Main-GesVeterinaria-Microservice')
@@ -15,6 +16,8 @@ async function bootstrap() {
       }
     }
   );
+
+
 
   app.useGlobalPipes(
     new ValidationPipe({
