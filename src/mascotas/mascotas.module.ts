@@ -9,10 +9,14 @@ import { RazaModule } from './raza/raza.module';
 import { PatologiaModule } from './patologia/patologia.module';
 import { EspecieRazaPatologiaModule } from './especie-raza-patologia/especie-raza-patologia.module';
 import { NatsModule } from 'src/transports/nats.module';
+import { TratamientoModule } from './tratamiento/tratamiento.module';
+import { MedicamentoModule } from './medicamento/medicamento.module';
+import { TratamientoModule } from './tratamiento/tratamiento.module';
+import { MedicamentoModule } from './medicamento/medicamento.module';
 
 @Module({
   controllers: [MascotasController],
   providers: [MascotasService],
-  imports: [HistoriaClinicaModule, ConsultaModule, VacunaModule, EspecieModule, RazaModule, PatologiaModule, EspecieRazaPatologiaModule, NatsModule],
+  imports: [HistoriaClinicaModule, ConsultaModule, VacunaModule, EspecieModule, RazaModule, PatologiaModule, EspecieRazaPatologiaModule, NatsModule, TratamientoModule, MedicamentoModule],
 })
 export class MascotasModule {}
