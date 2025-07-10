@@ -1,4 +1,4 @@
-import { ForbiddenException, Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { CreateTratamientoDto } from './dto/create-tratamiento.dto';
 import { UpdateTratamientoDto } from './dto/update-tratamiento.dto';
 import { NATS_SERVICE } from 'src/config';
@@ -60,8 +60,51 @@ export class TratamientoService extends PrismaClient implements OnModuleInit {
     return `This action returns all tratamiento`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} tratamiento`;
+  async tratamientoByConsulta(con_id: number, userId: number) {
+    const tratamientos = await this.tratamiento.findMany({
+      where: {
+        consulta_id: con_id
+      },
+      include: {
+        medicamentos: true,
+        consulta: true
+      }
+    });
+
+    if (!tratamientos || tratamientos.length === 0) {
+      throw new NotFoundException('No se encontró tratamiento para esta consulta');
+    }
+
+    for (const tratamiento of tratamientos) {
+      const empresaId = tratamiento.consulta.empresa_id;
+
+      const { valido, motivo } = await this.client
+        .send('empresas.validar-empresa-admin', {
+          empresa_id: empresaId,
+          admin_id: userId,
+        })
+        .toPromise();
+
+      if (!valido) {
+        throw new ForbiddenException(motivo || `No autorizado para tratamiento de empresa ${empresaId}`);
+      }
+    }
+
+    return tratamientos;
+  }
+
+  async findOneTratamiento(tratamiento_id: number, userId: number) {
+    const tratamiento = await this.tratamiento.findUnique({
+      where: { tra_id: tratamiento_id },
+      include: {
+        medicamentos: true,
+        consulta: true,
+      }
+    })
+
+    if (!tratamiento) throw new NotFoundException('Tratamiento no encontrado');
+
+    return tratamiento;
   }
 
   update(id: number, updateTratamientoDto: UpdateTratamientoDto) {

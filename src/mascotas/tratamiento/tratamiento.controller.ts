@@ -18,9 +18,16 @@ export class TratamientoController {
     return this.tratamientoService.findAll();
   }
 
-  @MessagePattern('findOneTratamiento')
-  findOne(@Payload() id: number) {
-    return this.tratamientoService.findOne(id);
+  @MessagePattern({ cmd: 'obtener_tratamiento_por_consulta' })
+  async tratamientoByConsulta(@Payload() payload: {consultaId: number,user: { id: number }}){
+    return this.tratamientoService.tratamientoByConsulta(payload.consultaId,payload.user.id)
+  }
+
+
+
+  @MessagePattern({ cmd: 'obtener_tratamiento' })
+  async findOne(@Payload() payload: { id: number, user: { id: number } }) {
+    return this.tratamientoService.findOneTratamiento(payload.id, payload.user.id);
   }
 
   @MessagePattern('updateTratamiento')
