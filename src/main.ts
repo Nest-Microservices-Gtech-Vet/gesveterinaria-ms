@@ -17,6 +17,7 @@ async function bootstrap() {
     }
   );
 
+  
 
 
   app.useGlobalPipes(
@@ -28,5 +29,6 @@ async function bootstrap() {
   );
   await app.listen();
   logger.log(`Microservicio de GesVeterinaria corriendo en el puerto ${envs.port}`)
+  
 }
 bootstrap();

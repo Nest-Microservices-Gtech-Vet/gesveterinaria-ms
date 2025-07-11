@@ -111,6 +111,7 @@ model Consulta {
   vacunas            Vacuna[]
   ConsultasPatologia ConsultaPatologia[] // 👈 Diagnóstico real
   Tratamiento        Tratamiento[]
+  Examen             Examen[]
 }
 
 model Vacuna {
@@ -248,18 +249,50 @@ model Tratamiento {
 }
 
 model Medicamento {
-  med_id Int    @id @default(autoincrement())
+  med_id         Int    @id @default(autoincrement())
   tratamiento_id Int // FK a tratamiento
-  med_nombre String @db.VarChar(255)
-  med_dosis  String @db.VarChar(255)
+  med_nombre     String @db.VarChar(255)
+  med_dosis      String @db.VarChar(255)
 
-  empresa_id  Int
+  empresa_id Int
 
-  createdBy   Int?
-  updatedBy   Int?
+  createdBy Int?
+  updatedBy Int?
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
   tratamiento Tratamiento @relation(fields: [tratamiento_id], references: [tra_id])
+}
+
+model Examen {
+  exam_id     Int      @id @default(autoincrement())
+  consulta_id Int
+  exam_tipo   String // Patológica, Rayos X, etc.
+  empresa_id  Int
+  activo      Boolean  @default(true)
+  createdBy   Int?
+  updatedBy   Int?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  archivos ExamenArchivo[]
+
+  consulta Consulta @relation(fields: [consulta_id], references: [con_id])
+  @@unique([consulta_id, exam_tipo], name: "consulta_id_tipo")
+}
+
+model ExamenArchivo {
+  exa_id          Int      @id @default(autoincrement())
+  examen_id       Int
+  exa_categoria   String // 'solicitud' o 'resultado'
+  exa_url         String
+  exa_descripcion String
+  empresa_id      Int
+  createdBy       Int?
+  updatedBy       Int?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  examen Examen @relation(fields: [examen_id], references: [exam_id])
 }
