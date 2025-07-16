@@ -21,9 +21,7 @@ export class MascotasService extends PrismaClient implements OnModuleInit {
   async create(createMascotaDto: CreateMascotaDto, user: { id: number }) {
     try {
       this.logger.debug('DTO recibido:', createMascotaDto);
-
-      this.logger.log(`Validando empresa ${createMascotaDto.empresa_id} para el admin ${user.id}`)
-      this.logger.debug('DTO recibido:', createMascotaDto);
+      this.logger.log(`Validando empresa ${createMascotaDto.empresa_id} para el admin ${user.id}`);
 
       const { valido, motivo } = await this.client
         .send('empresas.validar-empresa-admin', {
@@ -37,62 +35,76 @@ export class MascotasService extends PrismaClient implements OnModuleInit {
         throw new ForbiddenException('Empresa no autorizada para este usuario.');
       }
 
+      const fechaNac =
+        createMascotaDto.mas_fechaNac !== undefined
+          ? new Date(createMascotaDto.mas_fechaNac)
+          : undefined;
+
+      if (fechaNac && isNaN(fechaNac.getTime())) {
+        throw new BadRequestException('Fecha de nacimiento inválida');
+      }
+
+
+
       const mascotaCrear = await this.mascota.create({
         data: {
           mas_nombre: createMascotaDto.mas_nombre,
-          mas_fechaNac: createMascotaDto.mas_fechaNac,
-          mas_peso: createMascotaDto.mas_peso,
+          mas_fechaNac: fechaNac,
+          mas_peso: Number(createMascotaDto.mas_peso),
           mas_color: createMascotaDto.mas_color,
-          mas_esterilizado: !!createMascotaDto.mas_esterilizado,
+          mas_esterilizado: createMascotaDto.mas_esterilizado === true,
           mas_microchip: createMascotaDto.mas_microchip,
           mas_foto: createMascotaDto.mas_foto,
           mas_notas: createMascotaDto.mas_notas,
-          empresa_id: createMascotaDto.empresa_id,
-          activo: createMascotaDto.activo ?? true,
+          empresa_id: Number(createMascotaDto.empresa_id),
+
           createdBy: user.id,
           especie: {
-            connect: { esp_id: createMascotaDto.especie_id }
+            connect: { esp_id: Number(createMascotaDto.especie_id) },
           },
           raza: {
-            connect: { raz_id: createMascotaDto.raza_id }
+            connect: { raz_id: Number(createMascotaDto.raza_id) },
           },
           propietario: {
-            connect: { cli_id: createMascotaDto.cliente_id }
-          }
-
-
-        }
+            connect: { cli_id: Number(createMascotaDto.cliente_id) },
+          },
+        },
       });
-      return mascotaCrear
+
+
+      return mascotaCrear;
     } catch (error) {
       this.logger.error('Error en creación de mascota', error.stack || error.message);
-      throw new InternalServerErrorException('No se pudo crear el mascota');
+      throw new InternalServerErrorException('No se pudo crear la mascota');
     }
   }
 
+
+
+
   async findAll(adminId: number, empresaId: number) {
-  // 1. Obtener empresas asociadas al admin
-  const empresas = await this.client.send('empresas.obtener-empresas-por-admin', { admin_id: adminId }).toPromise();
+    // 1. Obtener empresas asociadas al admin
+    const empresas = await this.client.send('empresas.obtener-empresas-por-admin', { admin_id: adminId }).toPromise();
 
-  if (!empresas || empresas.length === 0) return [];
+    if (!empresas || empresas.length === 0) return [];
 
-  const empresaIds = empresas.map(e => e.emp_id);
+    const empresaIds = empresas.map(e => e.emp_id);
 
-  // 2. Validar que la empresa actual está dentro de las que el admin puede ver
-  if (!empresaIds.includes(empresaId)) {
-    throw new UnauthorizedException('No tiene acceso a esta empresa');
+    // 2. Validar que la empresa actual está dentro de las que el admin puede ver
+    if (!empresaIds.includes(empresaId)) {
+      throw new UnauthorizedException('No tiene acceso a esta empresa');
+    }
+
+    // 3. Buscar mascotas solo de la empresa actual
+    return this.mascota.findMany({
+      where: {
+        empresa_id: empresaId,
+        activo: true,
+      },
+      orderBy: { created_at: 'desc' },
+      include: { propietario: true }
+    });
   }
-
-  // 3. Buscar mascotas solo de la empresa actual
-  return this.mascota.findMany({
-    where: {
-      empresa_id: empresaId,
-      activo: true,
-    },
-    orderBy: { created_at: 'desc' },
-    include: { propietario: true }
-  });
-}
 
 
 
@@ -123,7 +135,7 @@ export class MascotasService extends PrismaClient implements OnModuleInit {
     }
     return mascota;
   }
-
+ 
   async update(
     mas_id: number,
     updateMascotaDto: UpdateMascotaDto,
@@ -157,6 +169,7 @@ export class MascotasService extends PrismaClient implements OnModuleInit {
         especie_id,
         raza_id,
         cliente_id,
+        mas_foto,
         createdBy,
         updatedBy: dtoUpdatedBy,
         empresa_id, // si lo usas en algún otro contexto
@@ -164,8 +177,9 @@ export class MascotasService extends PrismaClient implements OnModuleInit {
       } = updateMascotaDto;
 
       const data: Prisma.MascotaUpdateInput = {
-        ...restoCampos,
+        ...updateMascotaDto,
         updatedBy,
+        ...(mas_foto && { mas_foto }),
 
         // Solo conectamos relaciones si los valores están presentes
         ...(especie_id && {
@@ -185,12 +199,19 @@ export class MascotasService extends PrismaClient implements OnModuleInit {
             connect: { cli_id: cliente_id },
           },
         }),
+        
       };
+      console.log('0mas_foto que se actualizará:', mas_foto);
+console.log('0data final para Prisma:', data);
 
+console.log(updateMascotaDto.mas_foto)
       const mascotaUpdated = await this.mascota.update({
         where: { mas_id },
         data,
       });
+      console.log('mas_foto que se actualizará:', mas_foto);
+console.log('data final para Prisma:', data);
+
 
       return mascotaUpdated;
     } catch (error) {

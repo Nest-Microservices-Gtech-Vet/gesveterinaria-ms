@@ -4,6 +4,8 @@ import { MascotasService } from './mascotas.service';
 import { CreateMascotaDto } from './dto/create-mascota.dto';
 import { UpdateMascotaDto } from './dto/update-mascota.dto';
 
+
+
 @Controller()
 export class MascotasController {
   constructor(private readonly mascotasService: MascotasService) { }
@@ -36,12 +38,23 @@ export class MascotasController {
       updateMascotaDto: UpdateMascotaDto;
       updatedBy: number;
       user: { id: number };
+      files?: Express.Multer.File[];
     }
   ) {
-    const { mas_id, updateMascotaDto, updatedBy, user } = payload
-    console.log(`LA MASCOTA ${payload}`)
-    return await this.mascotasService.update(mas_id, updateMascotaDto, updatedBy, user.id)
+    
+    const { mas_id, updateMascotaDto, updatedBy, user, files } = payload;
+    console.log('Archivos recibidos en microservicio:', files);
+
+
+    const foto = files?.find((file) => file.fieldname === 'mas_foto');
+     console.log('📸 Foto recibida en microservicio:', foto?.filename);
+    if (foto) {
+      updateMascotaDto.mas_foto = foto.filename;
+    }
+
+    return await this.mascotasService.update(mas_id, updateMascotaDto, updatedBy, user.id);
   }
+
 
   @MessagePattern({ cmd: 'mascota_delete' })
   async remove(@Payload() payload: {
