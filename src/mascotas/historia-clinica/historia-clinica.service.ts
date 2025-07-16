@@ -85,33 +85,8 @@ export class HistoriaClinicaService extends PrismaClient implements OnModuleInit
   }
   //iniica obtener amscota histora clinica
   async findByMascota(mascota_id: number) {
-  const historia = await this.historiaClinica.findUnique({
-    where: { mascota_id },
-    include: {
-      mascota: {
-        include: {
-          propietario: true,
-        },
-      },
-      consultas: {
-        orderBy: {
-          con_fecha: 'desc',
-        },
-      },
-    },
-  });
-
-  if (!historia) {
-    const empresa_id = await this.obtenerEmpresaIdDesdeMascota(mascota_id);
-    const nuevoNumero = await this.generarNumeroHistoriaPorEmpresa(empresa_id);
-
-    return this.historiaClinica.create({
-      data: {
-        mascota_id,
-        empresa_id,
-        hic_estado: 'Abierta',
-        hic_numero_local: nuevoNumero,
-      },
+    const historia = await this.historiaClinica.findUnique({
+      where: { mascota_id },
       include: {
         mascota: {
           include: {
@@ -122,13 +97,45 @@ export class HistoriaClinicaService extends PrismaClient implements OnModuleInit
           orderBy: {
             con_fecha: 'desc',
           },
+
+          include: {
+            Examen: true, // ✅ Aquí añades los exámenes
+          },
         },
       },
     });
-  }
 
-  return historia;
-}
+    if (!historia) {
+      const empresa_id = await this.obtenerEmpresaIdDesdeMascota(mascota_id);
+      const nuevoNumero = await this.generarNumeroHistoriaPorEmpresa(empresa_id);
+
+      return this.historiaClinica.create({
+        data: {
+          mascota_id,
+          empresa_id,
+          hic_estado: 'Abierta',
+          hic_numero_local: nuevoNumero,
+        },
+        include: {
+          mascota: {
+            include: {
+              propietario: true,
+            },
+          },
+          consultas: {
+            orderBy: {
+              con_fecha: 'desc',
+            },
+            include: {
+              Examen: true,
+            },
+          },
+        },
+      });
+    }
+
+    return historia;
+  }
 
   //fin obtener amscota histora clinica
   //************************************************************** */

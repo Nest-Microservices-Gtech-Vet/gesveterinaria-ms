@@ -102,6 +102,8 @@ export class ConsultaService extends PrismaClient implements OnModuleInit {
           },
         },
         historiaClinica: true,
+        Examen:true,
+        
       },
     });
     if (!consulta) {
