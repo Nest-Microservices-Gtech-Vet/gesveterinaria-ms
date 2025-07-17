@@ -99,7 +99,8 @@ CREATE TABLE "Vacuna" (
     "vac_lote" VARCHAR(100),
     "vac_foto" VARCHAR(255),
     "vac_observacion" VARCHAR(255),
-    "consulta_id" INTEGER NOT NULL,
+    "historiaClinica_id" INTEGER NOT NULL,
+    "mascota_id" INTEGER NOT NULL,
     "empresa_id" INTEGER NOT NULL,
     "activo" BOOLEAN NOT NULL DEFAULT true,
     "createdBy" INTEGER,
@@ -227,6 +228,37 @@ CREATE TABLE "Medicamento" (
     CONSTRAINT "Medicamento_pkey" PRIMARY KEY ("med_id")
 );
 
+-- CreateTable
+CREATE TABLE "Examen" (
+    "exam_id" SERIAL NOT NULL,
+    "consulta_id" INTEGER NOT NULL,
+    "exam_tipo" TEXT NOT NULL,
+    "empresa_id" INTEGER NOT NULL,
+    "activo" BOOLEAN NOT NULL DEFAULT true,
+    "createdBy" INTEGER,
+    "updatedBy" INTEGER,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Examen_pkey" PRIMARY KEY ("exam_id")
+);
+
+-- CreateTable
+CREATE TABLE "ExamenArchivo" (
+    "exa_id" SERIAL NOT NULL,
+    "examen_id" INTEGER NOT NULL,
+    "exa_categoria" TEXT NOT NULL,
+    "exa_url" TEXT NOT NULL,
+    "exa_descripcion" TEXT NOT NULL,
+    "empresa_id" INTEGER NOT NULL,
+    "createdBy" INTEGER,
+    "updatedBy" INTEGER,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ExamenArchivo_pkey" PRIMARY KEY ("exa_id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Cliente_cli_identificacion_key" ON "Cliente"("cli_identificacion");
 
@@ -241,6 +273,9 @@ CREATE UNIQUE INDEX "HistoriaClinica_mascota_id_key" ON "HistoriaClinica"("masco
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Especie_esp_nombre_key" ON "Especie"("esp_nombre");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Examen_consulta_id_exam_tipo_key" ON "Examen"("consulta_id", "exam_tipo");
 
 -- AddForeignKey
 ALTER TABLE "Mascota" ADD CONSTRAINT "Mascota_especie_id_fkey" FOREIGN KEY ("especie_id") REFERENCES "Especie"("esp_id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -261,7 +296,10 @@ ALTER TABLE "Consulta" ADD CONSTRAINT "Consulta_mascota_id_fkey" FOREIGN KEY ("m
 ALTER TABLE "Consulta" ADD CONSTRAINT "Consulta_historiaClinica_id_fkey" FOREIGN KEY ("historiaClinica_id") REFERENCES "HistoriaClinica"("hic_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Vacuna" ADD CONSTRAINT "Vacuna_consulta_id_fkey" FOREIGN KEY ("consulta_id") REFERENCES "Consulta"("con_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Vacuna" ADD CONSTRAINT "Vacuna_historiaClinica_id_fkey" FOREIGN KEY ("historiaClinica_id") REFERENCES "HistoriaClinica"("hic_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Vacuna" ADD CONSTRAINT "Vacuna_mascota_id_fkey" FOREIGN KEY ("mascota_id") REFERENCES "Mascota"("mas_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Raza" ADD CONSTRAINT "Raza_especie_id_fkey" FOREIGN KEY ("especie_id") REFERENCES "Especie"("esp_id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -289,3 +327,9 @@ ALTER TABLE "Tratamiento" ADD CONSTRAINT "Tratamiento_consulta_id_fkey" FOREIGN 
 
 -- AddForeignKey
 ALTER TABLE "Medicamento" ADD CONSTRAINT "Medicamento_tratamiento_id_fkey" FOREIGN KEY ("tratamiento_id") REFERENCES "Tratamiento"("tra_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Examen" ADD CONSTRAINT "Examen_consulta_id_fkey" FOREIGN KEY ("consulta_id") REFERENCES "Consulta"("con_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ExamenArchivo" ADD CONSTRAINT "ExamenArchivo_examen_id_fkey" FOREIGN KEY ("examen_id") REFERENCES "Examen"("exam_id") ON DELETE RESTRICT ON UPDATE CASCADE;

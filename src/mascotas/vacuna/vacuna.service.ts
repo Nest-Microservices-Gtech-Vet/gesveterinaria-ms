@@ -46,34 +46,34 @@ export class VacunaService extends PrismaClient implements OnModuleInit {
         throw new ForbiddenException('Empresa no autorizada para este usuario.');
       }
 
-      const consulta = await this.consulta.findFirst({
-        where: {
-          empresa_id: Number(createVacunaDto.empresa_id),
-          mascota_id: Number(createVacunaDto.mascota_id),
-          con_numero_mascota: Number(createVacunaDto.numeroConsulta),
-        },
-      });
+      // const consulta = await this.consulta.findFirst({
+      //   where: {
+      //     empresa_id: Number(createVacunaDto.empresa_id),
+      //     mascota_id: Number(createVacunaDto.mascota_id),
+      //     con_numero_mascota: Number(createVacunaDto.numeroConsulta),
+      //   },
+      // });
 
 
-      if (!consulta) {
-        throw new NotFoundException('Consulta no encontrada.');
-      }
+      // if (!consulta) {
+      //   throw new NotFoundException('Consulta no encontrada.');
+      // }
 
       const vacuna = await this.vacuna.create({
         data: {
           vac_nombre: createVacunaDto.vac_nombre,
           vac_tipo: createVacunaDto.vac_tipo,
           vac_fecha: new Date(createVacunaDto.vac_fecha),
-          vac_proxima: createVacunaDto.vac_proxima
-            ? new Date(createVacunaDto.vac_proxima)
-            : null,
+          vac_proxima: createVacunaDto.vac_proxima ? new Date(createVacunaDto.vac_proxima) : null,
           vac_lote: createVacunaDto.vac_lote,
           vac_observacion: createVacunaDto.vac_observacion,
           empresa_id: Number(createVacunaDto.empresa_id),
-          consulta_id: consulta.con_id,
+          mascota_id: Number(createVacunaDto.mascota_id),
+          historiaClinica_id: Number(createVacunaDto.historiaClinica_id), // ✅ NUEVO
           createdBy: user.id,
-        },
+        }
       });
+
 
       // Guardar fotos (si las hay)
       if (fotos && fotos.length > 0) {
@@ -124,18 +124,18 @@ export class VacunaService extends PrismaClient implements OnModuleInit {
     }
   }
 
-  async findByConsulta(consultaId: number) {
-    return this.vacuna.findMany({
-      where: {
-        consulta_id: consultaId,
-        activo: true,
-      },
-      include: {
-        VacunaFoto: true,
-      },
-      orderBy: {
-        vac_fecha: 'desc',
-      },
-    });
-  }
+  // async findByConsulta(consultaId: number) {
+  //   return this.vacuna.findMany({
+  //     where: {
+  //       consulta_id: consultaId,
+  //       activo: true,
+  //     },
+  //     include: {
+  //       VacunaFoto: true,
+  //     },
+  //     orderBy: {
+  //       vac_fecha: 'desc',
+  //     },
+  //   });
+  // }
 }

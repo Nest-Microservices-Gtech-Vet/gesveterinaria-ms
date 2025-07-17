@@ -59,6 +59,7 @@ model Mascota {
   propietario     Cliente          @relation(fields: [cliente_id], references: [cli_id])
   historiaClinica HistoriaClinica?
   Consulta        Consulta[]
+  Vacuna          Vacuna[]
 }
 
 model HistoriaClinica {
@@ -76,6 +77,7 @@ model HistoriaClinica {
 
   mascota   Mascota    @relation(fields: [mascota_id], references: [mas_id])
   consultas Consulta[]
+  Vacuna    Vacuna[]
 }
 
 model Consulta {
@@ -108,33 +110,35 @@ model Consulta {
   updated_at         DateTime @updatedAt
 
   historiaClinica    HistoriaClinica     @relation(fields: [historiaClinica_id], references: [hic_id])
-  vacunas            Vacuna[]
   ConsultasPatologia ConsultaPatologia[] // 👈 Diagnóstico real
   Tratamiento        Tratamiento[]
   Examen             Examen[]
 }
 
 model Vacuna {
-  vac_id          Int       @id @default(autoincrement())
-  vac_nombre      String    @db.VarChar(255)
-  vac_tipo        String    @db.VarChar(100)
-  vac_fecha       DateTime
-  vac_proxima     DateTime?
-  vac_lote        String?   @db.VarChar(100)
-  vac_foto        String?   @db.VarChar(255) // URL o nombre de archivo
-  vac_observacion String?   @db.VarChar(255)
+  vac_id              Int       @id @default(autoincrement())
+  vac_nombre          String    @db.VarChar(255)
+  vac_tipo            String    @db.VarChar(100)
+  vac_fecha           DateTime
+  vac_proxima         DateTime?
+  vac_lote            String?   @db.VarChar(100)
+  vac_foto            String?   @db.VarChar(255)
+  vac_observacion     String?   @db.VarChar(255)
 
-  consulta_id Int
-  empresa_id  Int
-  activo      Boolean  @default(true)
-  createdBy   Int?
-  updatedBy   Int?
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  historiaClinica_id  Int       // ✅ NUEVO
+  mascota_id          Int       // ✅ NUEVO
+  empresa_id          Int
+  activo              Boolean   @default(true)
+  createdBy           Int?
+  updatedBy           Int?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
 
-  consulta   Consulta     @relation(fields: [consulta_id], references: [con_id])
-  VacunaFoto VacunaFoto[]
+  historiaClinica     HistoriaClinica @relation(fields: [historiaClinica_id], references: [hic_id])
+  mascota             Mascota         @relation(fields: [mascota_id], references: [mas_id])
+  VacunaFoto          VacunaFoto[]
 }
+
 
 model Especie {
   esp_id     Int    @id @default(autoincrement())
@@ -279,6 +283,7 @@ model Examen {
   archivos ExamenArchivo[]
 
   consulta Consulta @relation(fields: [consulta_id], references: [con_id])
+
   @@unique([consulta_id, exam_tipo], name: "consulta_id_tipo")
 }
 
