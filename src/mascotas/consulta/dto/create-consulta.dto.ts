@@ -89,8 +89,10 @@ export class CreateConsultaDto {
     @IsInt()
     empresa_id: number;
 
+    @IsOptional()
     @IsArray()
     @ArrayNotEmpty()
     @ArrayUnique()
-    patologiasIds: number[]; // 👈 Diagnóstico real
+    patologiasIds?: number[];
+
 }
