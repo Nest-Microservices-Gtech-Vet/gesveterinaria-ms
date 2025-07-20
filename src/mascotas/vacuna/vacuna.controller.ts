@@ -34,6 +34,11 @@ export class VacunaController {
   //   return this.vacunaService.guardarFotosVacuna(vacId, fotos);
   // }
 
+  @MessagePattern({ cmd: 'vacunasPorMascota' })
+  async getVacunasPorMascota(@Payload() data: { mascotaId: number }) {
+    return this.vacunaService.findByMascota(data.mascotaId);
+  }
+
 
 
 }

@@ -138,4 +138,20 @@ export class VacunaService extends PrismaClient implements OnModuleInit {
   //     },
   //   });
   // }
+
+
+  async findByMascota(mascotaId: number) {
+    return this.vacuna.findMany({
+      where: {
+        mascota_id: mascotaId,
+        activo: true,
+      },
+      include: {
+        VacunaFoto: true,
+      },
+      orderBy: {
+        vac_fecha: 'desc',
+      },
+    });
+  }
 }
