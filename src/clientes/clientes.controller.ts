@@ -3,6 +3,7 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ClientesService } from './clientes.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
+import { PaginationDto } from 'src/common';
 
 @Controller()
 export class ClientesController {
@@ -24,9 +25,9 @@ export class ClientesController {
 
   //inicia obtener clientes
   @MessagePattern({ cmd: 'findAll_clientes' })
-  findAll(@Payload() payload: { adminId: number, empresaId: number }) {
-    const { adminId ,empresaId} = payload;
-    return this.clientesService.findAll(adminId,empresaId);
+  findAll(@Payload() payload: { adminId: number, empresaId: number,paginationDto: PaginationDto }) {
+    const { adminId ,empresaId,paginationDto} = payload;
+    return this.clientesService.findAll(adminId,empresaId,paginationDto);
   }
   //fin obtener clientes
   //************************************************************************************** */
@@ -69,15 +70,15 @@ export class ClientesController {
   // src/clientes/clientes.controller.ts (en gesveterinaria-ms)
   @MessagePattern({ cmd: 'clientes_por_empresa' })
   async listarClientesPorEmpresa(
-    @Payload() payload: { empresa_id: number; user: { id: number } }
+    @Payload() payload: { empresa_id: number; user: { id: number };paginationDto: PaginationDto  }
   ) {
-    const { empresa_id, user } = payload;
+    const { empresa_id, user,paginationDto } = payload;
 
     if (!user?.id) {
       throw new BadRequestException('El campo user.id es obligatorio');
     }
 
-    return this.clientesService.listarPorEmpresa(empresa_id, user.id);
+    return this.clientesService.listarPorEmpresa(empresa_id, user.id,paginationDto);
   }
 
 }

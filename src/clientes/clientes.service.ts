@@ -6,6 +6,7 @@ import { privateDecrypt } from 'crypto';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
+import { PaginationDto } from 'src/common';
 
 @Injectable()
 export class ClientesService extends PrismaClient implements OnModuleInit {
@@ -64,7 +65,23 @@ export class ClientesService extends PrismaClient implements OnModuleInit {
   //************************************************************************************** */
   //inicia obtener clientes
 
-  async findAll(adminId: number, empresaId: number) {
+  async findAll(adminId: number, empresaId: number, paginationDto: PaginationDto) {
+    const { page = 1, limit = 50, search = '' } = paginationDto;
+    const where: any = {
+      empresa_id: empresaId,
+      activo: true,
+    };
+
+    if (search) {
+      where.OR = [
+        { cli_nombre: { contains: search, mode: 'insensitive' } },
+        { cli_identificacion: { contains: search, mode: 'insensitive' } },
+        { cli_email: { contains: search, mode: 'insensitive' } },
+
+
+      ];
+    }
+
     try {
       const empresas = await this.client.send('empresas.obtener-empresas-por-admin', { admin_id: adminId }).toPromise();
 
@@ -73,11 +90,12 @@ export class ClientesService extends PrismaClient implements OnModuleInit {
       }
 
       const empresasIds = empresas.map((e) => e.emp_id);
+      if (!empresasIds.includes(empresaId)) {
+        throw new UnauthorizedException('No tiene acceso a esta empresa');
+      }
 
       const clientes = await this.cliente.findMany({
-        where: {
-          empresa_id: empresaId,activo:true
-        },
+        where,
         orderBy: {
           created_at: 'desc',
         },
@@ -92,7 +110,7 @@ export class ClientesService extends PrismaClient implements OnModuleInit {
   //fin obtener clientes
   //************************************************************************************** */
   //inicia encontrar cliente por id
-  async findOne(cli_id: number,userId: number) {
+  async findOne(cli_id: number, userId: number) {
     const cliente = await this.cliente.findFirst({
       where: {
         cli_id
@@ -189,16 +207,31 @@ export class ClientesService extends PrismaClient implements OnModuleInit {
       };
     } catch (error) {
       console.error('❌ Error al eliminar cliente:', error);
-    throw new RpcException({
-      message: 'Error al eliminar cliente',
-      status: HttpStatus.INTERNAL_SERVER_ERROR,
-       });
+      throw new RpcException({
+        message: 'Error al eliminar cliente',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
   }
 
   //ininio borrado logico
   //*************************************************************************************************************** */
-  async listarPorEmpresa(empresa_id: number, admin_id: number) {
+  async listarPorEmpresa(empresa_id: number, admin_id: number, paginationDto: PaginationDto) {
+    const { page = 1, limit = 50, search = '' } = paginationDto;
+    const where: any = {
+      empresa_id: empresa_id,
+      activo: true,
+    };
+
+    if (search) {
+      where.OR = [
+        { cli_nombre: { contains: search, mode: 'insensitive' } },
+        { cli_identificacion: { contains: search, mode: 'insensitive' } },
+        { cli_email: { contains: search, mode: 'insensitive' } },
+
+
+      ];
+    }
     // Validar que el admin está relacionado con la empresa
     const { valido, motivo } = await this.client
       .send('empresas.validar-empresa-admin', {
@@ -214,7 +247,7 @@ export class ClientesService extends PrismaClient implements OnModuleInit {
 
     // Si está autorizado, retornar los clientes
     return this.cliente.findMany({
-      where: { empresa_id, activo:true },
+      where,
       orderBy: { created_at: 'desc' },
     });
   }

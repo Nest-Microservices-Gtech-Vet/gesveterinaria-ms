@@ -113,7 +113,7 @@ export class MascotasService extends PrismaClient implements OnModuleInit {
     return this.mascota.findMany({
       where,
       orderBy: { created_at: 'desc' },
-      include: { propietario: true }
+      include: { propietario: true,especie:true }
     });
   }
 
