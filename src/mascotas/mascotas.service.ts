@@ -4,6 +4,7 @@ import { UpdateMascotaDto } from './dto/update-mascota.dto';
 import { NATS_SERVICE } from 'src/config';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { Prisma, PrismaClient } from '@prisma/client';
+import { PaginationDto } from 'src/common';
 
 @Injectable()
 export class MascotasService extends PrismaClient implements OnModuleInit {
@@ -82,7 +83,20 @@ export class MascotasService extends PrismaClient implements OnModuleInit {
 
 
 
-  async findAll(adminId: number, empresaId: number) {
+  async findAll(adminId: number, empresaId: number, paginationDto: PaginationDto) {
+    const { page = 1, limit = 50, search = '' } = paginationDto;
+
+    const where: any = {
+      empresa_id: empresaId,
+      activo: true,
+    };
+
+    if (search) {
+      where.OR = [
+        { mas_nombre: { contains: search, mode: 'insensitive' } },
+        
+      ];
+    }
     // 1. Obtener empresas asociadas al admin
     const empresas = await this.client.send('empresas.obtener-empresas-por-admin', { admin_id: adminId }).toPromise();
 
@@ -97,10 +111,7 @@ export class MascotasService extends PrismaClient implements OnModuleInit {
 
     // 3. Buscar mascotas solo de la empresa actual
     return this.mascota.findMany({
-      where: {
-        empresa_id: empresaId,
-        activo: true,
-      },
+      where,
       orderBy: { created_at: 'desc' },
       include: { propietario: true }
     });
@@ -135,7 +146,7 @@ export class MascotasService extends PrismaClient implements OnModuleInit {
     }
     return mascota;
   }
- 
+
   async update(
     mas_id: number,
     updateMascotaDto: UpdateMascotaDto,
@@ -199,18 +210,18 @@ export class MascotasService extends PrismaClient implements OnModuleInit {
             connect: { cli_id: cliente_id },
           },
         }),
-        
+
       };
       console.log('0mas_foto que se actualizará:', mas_foto);
-console.log('0data final para Prisma:', data);
+      console.log('0data final para Prisma:', data);
 
-console.log(updateMascotaDto.mas_foto)
+      console.log(updateMascotaDto.mas_foto)
       const mascotaUpdated = await this.mascota.update({
         where: { mas_id },
         data,
       });
       console.log('mas_foto que se actualizará:', mas_foto);
-console.log('data final para Prisma:', data);
+      console.log('data final para Prisma:', data);
 
 
       return mascotaUpdated;

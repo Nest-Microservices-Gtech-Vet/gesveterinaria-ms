@@ -3,6 +3,7 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { MascotasService } from './mascotas.service';
 import { CreateMascotaDto } from './dto/create-mascota.dto';
 import { UpdateMascotaDto } from './dto/update-mascota.dto';
+import { PaginationDto } from 'src/common';
 
 
 
@@ -20,9 +21,9 @@ export class MascotasController {
   }
 
   @MessagePattern({ cmd: 'findAll_mascotas' })
-  findAll(@Payload() payload: { adminId: number, empresaId: number }) {
-    const { adminId, empresaId } = payload;
-    return this.mascotasService.findAll(adminId, empresaId);
+  findAll(@Payload() payload: { adminId: number, empresaId: number , paginationDto: PaginationDto}) {
+    const { adminId, empresaId ,paginationDto} = payload;
+    return this.mascotasService.findAll(adminId, empresaId,paginationDto);
   }
 
 
