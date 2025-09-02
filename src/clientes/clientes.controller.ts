@@ -25,60 +25,81 @@ export class ClientesController {
 
   //inicia obtener clientes
   @MessagePattern({ cmd: 'findAll_clientes' })
-  findAll(@Payload() payload: { adminId: number, empresaId: number,paginationDto: PaginationDto }) {
-    const { adminId ,empresaId,paginationDto} = payload;
-    return this.clientesService.findAll(adminId,empresaId,paginationDto);
+  findAll(@Payload() payload: { adminId: number, empresaId: number, paginationDto: PaginationDto }) {
+    const { adminId, empresaId, paginationDto } = payload;
+    return this.clientesService.findAll(adminId, empresaId, paginationDto);
   }
   //fin obtener clientes
   //************************************************************************************** */
   //inicia obtener clientes por id
-  @MessagePattern({ cmd: 'findOne_cliente'})
-  async findOne(@Payload() payload: { cli_id: number, user: { id: number }  }) {
+  @MessagePattern({ cmd: 'findOne_cliente' })
+  async findOne(@Payload() payload: { cli_id: number, user: { id: number } }) {
 
     return this.clientesService.findOne(payload.cli_id, payload.user.id);
   }
   //fin obtener clientes por id
   //************************************************************************************** */
-//INICIO ACTUALIZAR CLIENTE
+  //INICIO ACTUALIZAR CLIENTE
   @MessagePattern({ cmd: 'cliente_update' })
   async update(
     @Payload() payload: {
-      cli_id:number;
+      cli_id: number;
       updateClienteDto: UpdateClienteDto;
       updatedBy: number;
-      user: { id: number };}) {
-    const { cli_id, updateClienteDto, updatedBy, user  } = payload
+      user: { id: number };
+    }) {
+    const { cli_id, updateClienteDto, updatedBy, user } = payload
     console.log(`EL CLIENTE ${payload}`)
     return this.clientesService.update(cli_id, updateClienteDto, updatedBy, user.id);
   }
   //FIN ACTUALIZAR CLIENTE
-//************************************************************************************** */
-//inicio borrado logico
+  //************************************************************************************** */
+  //inicio borrado logico
   @MessagePattern({ cmd: 'cliente_delete' })
   async remove(@Payload() payload: {
     cli_id: number;
-    user:{id:number};
-    updatedBy:number;
+    user: { id: number };
+    updatedBy: number;
   }) {
-    const { cli_id,user, updatedBy } = payload
+    const { cli_id, user, updatedBy } = payload
     console.log(`El propietario ${payload} a sido eliminado`)
-    return this.clientesService.remove(cli_id,user.id, updatedBy);
+    return this.clientesService.remove(cli_id, user.id, updatedBy);
   }
-// fin borrado logico 
+  // fin borrado logico 
 
   //**************************************************************************************** */
   // src/clientes/clientes.controller.ts (en gesveterinaria-ms)
   @MessagePattern({ cmd: 'clientes_por_empresa' })
   async listarClientesPorEmpresa(
-    @Payload() payload: { empresa_id: number; user: { id: number };paginationDto: PaginationDto  }
+    @Payload() payload: { empresa_id: number; user: { id: number }; paginationDto: PaginationDto }
   ) {
-    const { empresa_id, user,paginationDto } = payload;
+    const { empresa_id, user, paginationDto } = payload;
 
     if (!user?.id) {
       throw new BadRequestException('El campo user.id es obligatorio');
     }
 
-    return this.clientesService.listarPorEmpresa(empresa_id, user.id,paginationDto);
+    return this.clientesService.listarPorEmpresa(empresa_id, user.id, paginationDto);
   }
+
+
+
+  @MessagePattern({ cmd: 'validar_identificacion_cliente' })
+  async validarIdentificacion(
+    @Payload() payload: { identificacion: string; user: { id: number } }
+  ) {
+    const { identificacion, user } = payload;
+
+    if (!identificacion) {
+      throw new BadRequestException('El campo identificacion es obligatorio');
+    }
+
+    if (!user?.id) {
+      throw new BadRequestException('El campo user.id es obligatorio');
+    }
+
+    return this.clientesService.validarIdentificacion(identificacion, user.id);
+  }
+
 
 }

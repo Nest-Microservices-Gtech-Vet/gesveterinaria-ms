@@ -252,4 +252,42 @@ export class ClientesService extends PrismaClient implements OnModuleInit {
     });
   }
 
+  //************************************************************************************************************** */
+  async validarIdentificacion(identificacion: string, admin_id: number) {
+    try {
+      // Buscar cliente por identificación
+      const cliente = await this.cliente.findFirst({
+        where: {
+          cli_identificacion: identificacion,
+          activo: true,
+        },
+      });
+
+      // Si lo encuentra, retornamos que ya existe
+      if (cliente) {
+        return {
+          exists: true,
+          clienteId: cliente.cli_id,
+          nombre: `${cliente.cli_nombre} ${cliente.cli_apellido}`,
+        };
+      }
+
+      // Si no existe, retornamos false
+      return { exists: false };
+    } catch (error) {
+      this.logger.error(
+        `Error al validar identificación (${identificacion})`,
+        error.stack || error.message,
+      );
+      throw new RpcException({
+        message: 'Error en validación de identificación',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
+    }
+  }
+
+
+
+
+
 }
