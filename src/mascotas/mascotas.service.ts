@@ -94,7 +94,15 @@ export class MascotasService extends PrismaClient implements OnModuleInit {
     if (search) {
       where.OR = [
         { mas_nombre: { contains: search, mode: 'insensitive' } },
-        
+        {
+          propietario: {
+            OR: [
+              { cli_identificacion: { contains: search, mode: 'insensitive' } },
+              { cli_nombre: { contains: search, mode: 'insensitive' } },
+              { cli_apellido: { contains: search, mode: 'insensitive' } },
+            ],
+          },
+        },
       ];
     }
     // 1. Obtener empresas asociadas al admin
@@ -113,7 +121,7 @@ export class MascotasService extends PrismaClient implements OnModuleInit {
     return this.mascota.findMany({
       where,
       orderBy: { created_at: 'desc' },
-      include: { propietario: true,especie:true }
+      include: { propietario: true, especie: true }
     });
   }
 

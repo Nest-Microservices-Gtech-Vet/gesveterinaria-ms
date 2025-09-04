@@ -68,4 +68,8 @@ export class MascotaBusquedaDto extends PaginationDto {
   @IsPositive()
   @Type(() => Number)
   empresa_id: number;
+
+  @IsOptional()
+  @IsString()
+  propietario?: string;  // 🔎 buscar por nombre del propietario
 }
