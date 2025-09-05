@@ -154,4 +154,62 @@ export class VacunaService extends PrismaClient implements OnModuleInit {
       },
     });
   }
+
+
+
+
+  /********************* */
+  async updateVacuna(
+    id: number,
+    updateVacunaDto: UpdateVacunaDto,
+    user: { id: number },
+    fotos?: { url: string; descripcion?: string }[],
+  ) {
+    try {
+      const { valido } = await this.client
+        .send('empresas.validar-empresa-admin', {
+          empresa_id: updateVacunaDto.empresa_id,
+          admin_id: user.id,
+        })
+        .toPromise();
+
+      if (!valido) {
+        throw new ForbiddenException('Empresa no autorizada para este usuario.');
+      }
+
+      const vacuna = await this.vacuna.update({
+        where: { vac_id: id },
+        data: {
+          vac_nombre: updateVacunaDto.vac_nombre,
+          vac_tipo: updateVacunaDto.vac_tipo,
+          vac_fecha: updateVacunaDto.vac_fecha
+            ? new Date(updateVacunaDto.vac_fecha)
+            : undefined,
+          vac_proxima: updateVacunaDto.vac_proxima
+            ? new Date(updateVacunaDto.vac_proxima)
+            : null,
+          vac_lote: updateVacunaDto.vac_lote,
+          vac_observacion: updateVacunaDto.vac_observacion,
+          updatedBy: user.id,
+        },
+      });
+
+      // ✅ Manejo de fotos nuevas
+      if (fotos && fotos.length > 0) {
+        await this.vacunaFoto.createMany({
+          data: fotos.map(foto => ({
+            vac_id: vacuna.vac_id,
+            url: foto.url,
+            descripcion: foto.descripcion || null,
+          })),
+        });
+      }
+
+      return vacuna;
+    } catch (error) {
+      this.logger.error('Error en actualización de vacuna', error);
+      throw new InternalServerErrorException('No se pudo actualizar la vacuna');
+    }
+  }
+
 }

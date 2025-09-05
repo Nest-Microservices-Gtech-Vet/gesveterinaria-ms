@@ -3,6 +3,8 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { VacunaService } from './vacuna.service';
 import { CreateVacunaDto } from './dto/create-vacuna.dto';
 import { UpdateVacunaDto } from './dto/update-vacuna.dto';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Controller()
 export class VacunaController {
@@ -38,6 +40,28 @@ export class VacunaController {
   async getVacunasPorMascota(@Payload() data: { mascotaId: number }) {
     return this.vacunaService.findByMascota(data.mascotaId);
   }
+
+
+  @MessagePattern({ cmd: 'vacunas.actualizar-con-fotos' })
+  async update(
+    @Payload()
+    payload: {
+      id: number;
+      updateVacunaDto: UpdateVacunaDto;
+      user: { id: number };
+      fotos?: { url: string; descripcion?: string }[];
+    },
+  ) {
+    return this.vacunaService.updateVacuna(
+      payload.id,
+      payload.updateVacunaDto,
+      payload.user,
+      payload.fotos,
+    );
+  }
+
+
+
 
 
 
