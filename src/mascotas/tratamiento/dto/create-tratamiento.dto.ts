@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsArray, IsInt, IsOptional, IsString, ValidateNested } from "class-validator";
+import { IsArray, IsDateString, IsInt, IsOptional, IsString, ValidateNested } from "class-validator";
 import { CreateMedicamentoDto } from "src/mascotas/medicamento/dto/create-medicamento.dto";
 
 // src/mascotas/tratamiento/dto/create-tratamiento.dto.ts
@@ -27,6 +27,12 @@ export class CreateTratamientoDto {
   @IsOptional()
   @IsInt()
   createdBy?: number;
+
+  @IsOptional()
+  @IsInt()
+  @IsDateString()
+  created_at: string;
+
 
   @IsArray()
   @ValidateNested({ each: true })
