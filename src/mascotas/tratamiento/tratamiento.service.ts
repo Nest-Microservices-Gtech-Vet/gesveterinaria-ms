@@ -1,9 +1,10 @@
-import { ForbiddenException, Inject, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { CreateTratamientoDto } from './dto/create-tratamiento.dto';
 import { UpdateTratamientoDto } from './dto/update-tratamiento.dto';
 import { NATS_SERVICE } from 'src/config';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaClient } from '@prisma/client';
+import { UpdateMedicamentoDto } from '../medicamento/dto/update-medicamento.dto';
 
 @Injectable()
 export class TratamientoService extends PrismaClient implements OnModuleInit {
@@ -110,6 +111,96 @@ export class TratamientoService extends PrismaClient implements OnModuleInit {
   update(id: number, updateTratamientoDto: UpdateTratamientoDto) {
     return `This action updates a #${id} tratamiento`;
   }
+
+
+
+
+  async updateMedicamento(med_id: number, updateMedicamentoDto: UpdateMedicamentoDto, updatedBy: number, admin_id: number, empresa_id?: number) {
+    try {
+      if (!med_id) {
+        throw new BadRequestException('🚫 No se encontró el ID del medicamento para actualizar.');
+      }
+
+      if (!empresa_id) {
+        throw new BadRequestException('🚫 No se encontró la empresa asociada al medicamento.');
+      }
+
+      console.log('📝 updateClienteDto recibido:', updateMedicamentoDto);
+
+      const { valido } = await this.client
+        .send('empresas.validar-empresa-admin', {
+          empresa_id,
+          admin_id,
+        })
+        .toPromise();
+
+      if (!valido) {
+        throw new ForbiddenException('No autorizado para modificar este medicamento');
+      }
+
+      return await this.medicamento.update({
+        where: { med_id },
+        data: {
+          ...updateMedicamentoDto,
+          updatedBy,
+        },
+      });
+    } catch (error) {
+
+    }
+  }
+
+ async updateTratamiento(
+  tra_id: number,
+  dto: UpdateTratamientoDto,
+  updatedBy: number,
+  admin_id: number,
+  empresa_id?: number
+) {
+  if (!tra_id) throw new BadRequestException('No se encontró el ID del tratamiento.');
+  if (!empresa_id) throw new BadRequestException('No se encontró la empresa asociada.');
+
+  // Validación empresa/admin
+  const { valido } = await this.client
+    .send('empresas.validar-empresa-admin', { empresa_id, admin_id })
+    .toPromise();
+
+  if (!valido) throw new ForbiddenException('Empresa no autorizada');
+
+  // Actualizamos el tratamiento
+  const tratamientoActualizado = await this.tratamiento.update({
+    where: { tra_id },
+    data: {
+      consulta_id: dto.consulta_id,
+      mascota_id: dto.mascota_id,
+      updatedBy,
+    },
+  });
+
+  // Actualizamos medicamentos (opcional)
+  if (dto.medicamentos?.length) {
+    // Eliminar anteriores y crear nuevos
+    await this.medicamento.deleteMany({ where: { tratamiento_id: tra_id } });
+
+    await this.medicamento.createMany({
+      data: dto.medicamentos.map((m) => ({
+        med_nombre: m.nombre,
+        med_dosis: m.dosis,
+        empresa_id,
+        createdBy: updatedBy,
+        tratamiento_id: tra_id,
+      })),
+    });
+  }
+
+  return {
+    ...tratamientoActualizado,
+    medicamentos: dto.medicamentos || [],
+  };
+}
+
+
+
 
   remove(id: number) {
     return `This action removes a #${id} tratamiento`;
