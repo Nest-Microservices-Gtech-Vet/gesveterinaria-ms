@@ -88,31 +88,61 @@ export class ConsultaService extends PrismaClient implements OnModuleInit {
     return `This action returns all consulta`;
   }
 
-  async findOneConsulta(con_id: number, userId: number) {
-
-
-    const consulta = await this.consulta.findFirst({
-      where: {
-        con_id
-      },
-      include: {
-        mascota: {
-          include: {
-            propietario: true,
-          },
+  async findOneConsulta(con_id: number, empresa_id: number) {
+    let consulta;
+    try {
+      consulta = await this.consulta.findFirst({
+        where: { con_id, },
+        include: {
+          mascota: { include: { propietario: true } },
+          historiaClinica: true,
+          Examen: true,
         },
-        historiaClinica: true,
-        Examen:true,
-        
-      },
-    });
+      });
+    } catch (error) {
+      console.error('❌ Error al buscar la consulta en DB:', error);
+      throw new RpcException({ message: 'Error traer consulta', error });
+    }
+
     if (!consulta) {
       throw new RpcException({
-        message: `[gesveterinaria-ms]Consulta  con el # ${con_id} no encontrado`
-      })
+        message: `[gesveterinaria-ms] Consulta con el #${con_id} no encontrada para esta empresa`,
+      });
     }
-    return consulta;
+
+    let medico = null;
+    if (consulta.createdBy) {
+      try {
+        medico = await this.client
+          .send({ cmd: 'findOne_users' }, { id: consulta.createdBy })
+          .toPromise();
+      } catch (e) {
+        console.error('❌ No se pudo traer el médico:', e?.message ?? e);
+      }
+    }
+
+    // let empresa = null;
+    // if (empresa_id) {
+    //   try {
+    //     empresa = await this.client
+    //       .send({ cmd: 'findOne_empresa' }, { emp_id: empresa_id })
+    //       .toPromise();
+    //   } catch (e) {
+    //     console.error('❌ No se pudo traer la empresa:', e?.message ?? e);
+    //   }
+    // }
+
+    let empresaConsulta = null;
+    if (consulta.empresa_id) {
+      empresaConsulta = await this.client
+        .send({ cmd: 'findOne_empresa' }, { emp_id: consulta.empresa_id })
+        .toPromise();
+    }
+
+    return { ...consulta, medico, empresa: empresaConsulta, };
   }
+
+
 
   async update(con_id: number, updateConsultaDto: UpdateConsultaDto, updatedBy: number, admin_id: number,) {
     try {
