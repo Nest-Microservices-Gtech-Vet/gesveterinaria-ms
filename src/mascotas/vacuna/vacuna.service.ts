@@ -10,8 +10,9 @@ import {
 import { CreateVacunaDto } from './dto/create-vacuna.dto';
 import { UpdateVacunaDto } from './dto/update-vacuna.dto';
 import { NATS_SERVICE } from 'src/config';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { PrismaClient } from '@prisma/client';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class VacunaService extends PrismaClient implements OnModuleInit {
@@ -141,19 +142,78 @@ export class VacunaService extends PrismaClient implements OnModuleInit {
 
 
   async findByMascota(mascotaId: number) {
-    return this.vacuna.findMany({
-      where: {
-        mascota_id: mascotaId,
-        activo: true,
-      },
-      include: {
-        VacunaFoto: true,
-      },
-      orderBy: {
-        vac_fecha: 'desc',
-      },
-    });
+    let vacunas;
+    try {
+      vacunas = await this.vacuna.findMany({
+        where: {
+          mascota_id: mascotaId,
+          activo: true,
+        },
+        include: {
+          VacunaFoto: true,
+          mascota: { include: { propietario: true } }, // Mascota + propietario
+        },
+        orderBy: {
+          vac_fecha: 'desc',
+        },
+      });
+    } catch (error) {
+      console.error('❌ Error al buscar vacunas en DB:', error);
+      throw new RpcException({ message: 'Error traer vacunas', error });
+    }
+
+    if (!vacunas || vacunas.length === 0) {
+      throw new RpcException({
+        message: `[gesveterinaria-ms] No se encontraron vacunas para mascota #${mascotaId}`,
+      });
+    }
+
+    const mascota = vacunas[0]?.mascota;
+    if (!mascota) {
+      throw new RpcException({
+        message: `No se encontró la mascota para las vacunas #${mascotaId}`,
+      });
+    }
+
+    const empresaId = mascota.empresa_id; // si tu modelo de mascota tiene empresa_id
+
+    // 🔹 Buscar empresa
+    let empresa = null;
+    if (empresaId) {
+      try {
+        empresa = await firstValueFrom(
+          this.client.send({ cmd: 'findOne_empresa' }, { emp_id: empresaId }),
+        );
+      } catch (e) {
+        console.error('❌ No se pudo traer la empresa:', e?.message ?? e);
+      }
+    }
+
+    // 🔹 Enriquecer cada vacuna con el médico que la creó
+    const vacunasConMedico = await Promise.all(
+      vacunas.map(async (v) => {
+        let medico = null;
+        if (v.createdBy) {
+          try {
+            medico = await firstValueFrom(
+              this.client.send({ cmd: 'findOne_users' }, { id: v.createdBy }),
+            );
+          } catch (e) {
+            console.error('❌ No se pudo traer el médico:', e?.message ?? e);
+          }
+        }
+        return { ...v, medico };
+      }),
+    );
+
+    return {
+      empresa,
+      propietario: mascota.propietario,
+      mascota,
+      vacunas: vacunasConMedico,
+    };
   }
+
 
 
 
@@ -164,8 +224,10 @@ export class VacunaService extends PrismaClient implements OnModuleInit {
     updateVacunaDto: UpdateVacunaDto,
     user: { id: number },
     fotos?: { url: string; descripcion?: string }[],
+    archivosAEliminar?: number[],
   ) {
     try {
+      // 🔐 Validación empresa-admin
       const { valido } = await this.client
         .send('empresas.validar-empresa-admin', {
           empresa_id: updateVacunaDto.empresa_id,
@@ -177,6 +239,7 @@ export class VacunaService extends PrismaClient implements OnModuleInit {
         throw new ForbiddenException('Empresa no autorizada para este usuario.');
       }
 
+      // 📝 Actualizar datos básicos
       const vacuna = await this.vacuna.update({
         where: { vac_id: id },
         data: {
@@ -194,7 +257,20 @@ export class VacunaService extends PrismaClient implements OnModuleInit {
         },
       });
 
-      // ✅ Manejo de fotos nuevas
+      // ❌ Eliminar fotos
+      if (archivosAEliminar && archivosAEliminar.length > 0) {
+        await this.vacunaFoto.deleteMany({
+          where: {
+            vf_id: { in: archivosAEliminar },
+            vac_id: id,
+          },
+        });
+
+        // 🔹 Opcional: borrar físicamente del disco
+        // aquí puedes buscar las rutas de esas fotos y hacer fs.unlinkSync(path)
+      }
+
+      // ✅ Insertar nuevas fotos
       if (fotos && fotos.length > 0) {
         await this.vacunaFoto.createMany({
           data: fotos.map(foto => ({
@@ -211,5 +287,6 @@ export class VacunaService extends PrismaClient implements OnModuleInit {
       throw new InternalServerErrorException('No se pudo actualizar la vacuna');
     }
   }
+
 
 }

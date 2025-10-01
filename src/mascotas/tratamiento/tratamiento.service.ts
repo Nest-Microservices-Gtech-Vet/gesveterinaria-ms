@@ -150,54 +150,54 @@ export class TratamientoService extends PrismaClient implements OnModuleInit {
     }
   }
 
- async updateTratamiento(
-  tra_id: number,
-  dto: UpdateTratamientoDto,
-  updatedBy: number,
-  admin_id: number,
-  empresa_id?: number
-) {
-  if (!tra_id) throw new BadRequestException('No se encontró el ID del tratamiento.');
-  if (!empresa_id) throw new BadRequestException('No se encontró la empresa asociada.');
+  async updateTratamiento(
+    tra_id: number,
+    dto: UpdateTratamientoDto,
+    updatedBy: number,
+    admin_id: number,
+    empresa_id?: number
+  ) {
+    if (!tra_id) throw new BadRequestException('No se encontró el ID del tratamiento.');
+    if (!empresa_id) throw new BadRequestException('No se encontró la empresa asociada.');
 
-  // Validación empresa/admin
-  const { valido } = await this.client
-    .send('empresas.validar-empresa-admin', { empresa_id, admin_id })
-    .toPromise();
+    // Validación empresa/admin
+    const { valido } = await this.client
+      .send('empresas.validar-empresa-admin', { empresa_id, admin_id })
+      .toPromise();
 
-  if (!valido) throw new ForbiddenException('Empresa no autorizada');
+    if (!valido) throw new ForbiddenException('Empresa no autorizada');
 
-  // Actualizamos el tratamiento
-  const tratamientoActualizado = await this.tratamiento.update({
-    where: { tra_id },
-    data: {
-      consulta_id: dto.consulta_id,
-      mascota_id: dto.mascota_id,
-      updatedBy,
-    },
-  });
-
-  // Actualizamos medicamentos (opcional)
-  if (dto.medicamentos?.length) {
-    // Eliminar anteriores y crear nuevos
-    await this.medicamento.deleteMany({ where: { tratamiento_id: tra_id } });
-
-    await this.medicamento.createMany({
-      data: dto.medicamentos.map((m) => ({
-        med_nombre: m.nombre,
-        med_dosis: m.dosis,
-        empresa_id,
-        createdBy: updatedBy,
-        tratamiento_id: tra_id,
-      })),
+    // Actualizamos el tratamiento
+    const tratamientoActualizado = await this.tratamiento.update({
+      where: { tra_id },
+      data: {
+        consulta_id: dto.consulta_id,
+        mascota_id: dto.mascota_id,
+        updatedBy,
+      },
     });
-  }
 
-  return {
-    ...tratamientoActualizado,
-    medicamentos: dto.medicamentos || [],
-  };
-}
+    // Actualizamos medicamentos (opcional)
+    if (dto.medicamentos?.length) {
+      // Eliminar anteriores y crear nuevos
+      await this.medicamento.deleteMany({ where: { tratamiento_id: tra_id } });
+
+      await this.medicamento.createMany({
+        data: dto.medicamentos.map((m) => ({
+          med_nombre: m.nombre,
+          med_dosis: m.dosis,
+          empresa_id,
+          createdBy: updatedBy,
+          tratamiento_id: tra_id,
+        })),
+      });
+    }
+
+    return {
+      ...tratamientoActualizado,
+      medicamentos: dto.medicamentos || [],
+    };
+  }
 
 
 

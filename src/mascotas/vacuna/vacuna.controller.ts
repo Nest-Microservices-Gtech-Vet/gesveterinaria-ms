@@ -50,6 +50,7 @@ export class VacunaController {
       updateVacunaDto: UpdateVacunaDto;
       user: { id: number };
       fotos?: { url: string; descripcion?: string }[];
+      archivosAEliminar?: number[];
     },
   ) {
     return this.vacunaService.updateVacuna(
@@ -57,6 +58,7 @@ export class VacunaController {
       payload.updateVacunaDto,
       payload.user,
       payload.fotos,
+      payload.archivosAEliminar,
     );
   }
 
